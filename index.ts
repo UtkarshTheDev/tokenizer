@@ -20,11 +20,48 @@ const getPairStats = (data: number[]) => {
         }
         stats.set(pair, count);
     }
-    //     console.log("=========== Stats Logs =========== \n");
-    //     console.log(stats);
-    //     console.log("=========== Stats Logs End =========== \n");
+    // console.log("=========== Stats Logs =========== \n");
+    // console.log(stats);
+    // console.log("=========== Stats Logs End =========== \n");
 
     return [maxCount, maxPair];
+};
+
+const tokenSwapping = ({
+    tokens,
+    pair,
+    newToken,
+}: {
+    tokens: number[];
+    pair: number;
+    newToken: number;
+}): number[] => {
+    const tokensArray: number[] = [];
+    const pair1 = pair >> 16;
+    const pair2 = pair & 0xffff;
+
+    let i = 0;
+    const length = tokens.length;
+
+    while (i < length) {
+        const num1 = tokens[i];
+        const num2 = tokens[i + 1];
+
+        if (num1 === undefined || num2 === undefined) {
+            i++;
+            continue;
+        }
+
+        if (num1 === pair1 && num2 === pair2) {
+            tokensArray.push(newToken);
+            i += 2;
+        } else {
+            tokensArray.push(num1);
+            i++;
+        }
+    }
+
+    return tokensArray;
 };
 
 const data = fs.readFileSync(path.resolve(__dirname, "data.txt"), "utf-8");
