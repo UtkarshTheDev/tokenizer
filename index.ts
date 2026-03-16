@@ -72,7 +72,7 @@ const tokenize = () => {
 
     let tokens = [...bytes];
 
-    const VocabArr: [number, number][] = [];
+    const DictArr: [number, number][] = [];
 
     for (let i = 0; i < iterations; i++) {
         const [maxCount, pairKey] = getPairStats(tokens);
@@ -86,18 +86,35 @@ const tokenize = () => {
             newToken: newToken,
         });
 
-        VocabArr.push([pairKey, newToken]);
+        DictArr.push([pairKey, newToken]);
+    }
+
+    const RevDict = new Map<number, [number, number]>();
+
+    for (let i = 0; i < DictArr.length; i++) {
+        const item = DictArr[i];
+
+        if (item === undefined) break;
+
+        const key = item[1];
+        const pairKey = item[0];
+        const pair1 = pairKey >> 16;
+        const pair2 = pairKey & 0xffff;
+
+        const value: [number, number] = [pair1, pair2];
+
+        RevDict.set(key, value);
     }
 
     console.log("Original: ", bytes.length);
     console.log("After Training: ", tokens.length);
-    console.log("After Training: ", VocabArr);
+    console.log("After Training: ", DictArr);
 
     const encode = (str: string) => {
         let tokens = [...Buffer.from(str, "utf-8")];
 
-        for (let i = 0; i < VocabArr.length; i++) {
-            const item = VocabArr[i];
+        for (let i = 0; i < DictArr.length; i++) {
+            const item = DictArr[i];
             if (item === undefined) break;
 
             const key = item[0];
