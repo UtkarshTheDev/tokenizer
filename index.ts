@@ -9,7 +9,7 @@ const getPairStats = (data: number[]) => {
         const num1 = data[i];
         const num2 = data[i + 1];
 
-        if (num1 === undefined || num2 === undefined) continue;
+        if (num1 === undefined || num2 === undefined) break;
 
         const pair = (num1 << 16) | num2;
         const count = (stats.get(pair) ?? 0) + 1;
@@ -24,7 +24,7 @@ const getPairStats = (data: number[]) => {
     // console.log(stats);
     // console.log("=========== Stats Logs End =========== \n");
 
-    return [maxCount, maxPair];
+    return [maxCount, maxPair] as [number, number];
 };
 
 const tokenSwapping = ({
@@ -47,10 +47,8 @@ const tokenSwapping = ({
         const num1 = tokens[i];
         const num2 = tokens[i + 1];
 
-        if (num1 === undefined || num2 === undefined) {
-            i++;
-            continue;
-        }
+        if (num1 === undefined) break;
+
 
         if (num1 === pair1 && num2 === pair2) {
             tokensArray.push(newToken);
@@ -80,7 +78,7 @@ const tokenize = () => {
     for (let i = 0; i < iterations; i++) {
         const [maxCount, pairKey] = getPairStats(tokens);
 
-        if (pairKey === undefined) continue;
+        if (maxCount < 2) break;
         const newToken = i + 256;
 
         tokens = tokenSwapping({
