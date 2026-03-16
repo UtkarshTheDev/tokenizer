@@ -64,8 +64,37 @@ const tokenSwapping = ({
     return tokensArray;
 };
 
-const data = fs.readFileSync(path.resolve(__dirname, "data.txt"), "utf-8");
+const tokenize = () => {
+    const data = fs.readFileSync(path.resolve(__dirname, "data.txt"), "utf-8");
 
-const bytes = [...Buffer.from(data, "utf-8")];
+    const bytes = [...Buffer.from(data, "utf-8")];
 
-console.log(getPairStats(bytes));
+    const sizeOfVocab = 320;
+
+    const iterations = sizeOfVocab - 256;
+
+    let tokens = [...bytes];
+
+    const VocabArr: [number, number][] = [];
+
+    for (let i = 0; i < iterations; i++) {
+        const [maxCount, pairKey] = getPairStats(tokens);
+
+        if (pairKey === undefined) continue;
+        const newToken = i + 256;
+
+        tokens = tokenSwapping({
+            tokens: tokens,
+            pair: pairKey,
+            newToken: newToken,
+        });
+
+        VocabArr.push([pairKey, newToken]);
+    }
+
+    console.log("Original: ", bytes.length);
+    console.log("After Training: ", tokens.length);
+    console.log("After Training: ", VocabArr);
+};
+
+tokenize();
