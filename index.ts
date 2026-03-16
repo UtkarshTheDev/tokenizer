@@ -49,7 +49,6 @@ const tokenSwapping = ({
 
         if (num1 === undefined) break;
 
-
         if (num1 === pair1 && num2 === pair2) {
             tokensArray.push(newToken);
             i += 2;
@@ -93,6 +92,26 @@ const tokenize = () => {
     console.log("Original: ", bytes.length);
     console.log("After Training: ", tokens.length);
     console.log("After Training: ", VocabArr);
+
+    const encode = (str: string) => {
+        let tokens = [...Buffer.from(str, "utf-8")];
+
+        for (let i = 0; i < VocabArr.length; i++) {
+            const item = VocabArr[i];
+            if (item === undefined) break;
+
+            const key = item[0];
+            const newToken = item[1];
+
+            tokens = tokenSwapping({
+                tokens: tokens,
+                pair: key,
+                newToken: newToken,
+            });
+        }
+
+        return tokens;
+    };
 };
 
 tokenize();
