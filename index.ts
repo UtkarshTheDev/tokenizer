@@ -129,6 +129,25 @@ const tokenize = () => {
 
         return tokens;
     };
+
+    const decode = (tokens: number[]) => {
+        const bytes = [...tokens];
+
+        for (let i = 0; i < bytes.length; i++) {
+            const item = bytes[i];
+            if (item === undefined) break;
+
+            const lookup = RevDict.get(item);
+
+            if (lookup != null) {
+                bytes[i] = lookup[0];
+                bytes.splice(i + 1, 0, lookup[1]);
+                i--;
+            }
+        }
+
+        return Buffer.from(bytes).toString("utf-8");
+    };
 };
 
 tokenize();
