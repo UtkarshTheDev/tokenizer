@@ -1,153 +1,166 @@
+import * as readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import fs from "node:fs";
 import path from "node:path";
+import { train, encode, decode, type MergeTable, type TrainingResult } from "./bpe/tokenizer";
 
-const getPairStats = (data: number[]) => {
-    const stats = new Map<number, number>();
-    let maxPair: number = 0;
-    let maxCount: number = 0;
-    for (let i = 0; i + 1 < data.length; i++) {
-        const num1 = data[i];
-        const num2 = data[i + 1];
+// Readline interface for interactive CLI
+const rl = readline.createInterface({ input, output });
 
-        if (num1 === undefined || num2 === undefined) break;
+let currentMergeTable: MergeTable | null = null;
+let currentVocabSize = 256;
+let currentTrainingStats: { 
+    timeMs: string, 
+    merges: number, 
+    originalBytes: number, 
+    finalTokens: number, 
+    ratio: string, 
+    spaceSaved: string 
+} | null = null;
 
-        const pair = (num1 << 16) | num2;
-        const count = (stats.get(pair) ?? 0) + 1;
-
-        if (count > maxCount) {
-            maxPair = pair;
-            maxCount = count;
-        }
-        stats.set(pair, count);
-    }
-    // console.log("=========== Stats Logs =========== \n");
-    // console.log(stats);
-    // console.log("=========== Stats Logs End =========== \n");
-
-    return [maxCount, maxPair] as [number, number];
+const printMenu = () => {
+    console.log(`\n🔤 Tokenizer CLI (Current: BPE)`);
+    console.log(`================================`);
+    console.log(`1. Train on text (type directly)`);
+    console.log(`2. Train on file (data/data.txt)`);
+    console.log(`3. Encode text`);
+    console.log(`4. Decode tokens`);
+    console.log(`5. Show training stats`);
+    console.log(`6. Exit\n`);
 };
 
-const tokenSwapping = ({
-    tokens,
-    pair,
-    newToken,
-}: {
-    tokens: number[];
-    pair: number;
-    newToken: number;
-}): number[] => {
-    const tokensArray: number[] = [];
-    const pair1 = pair >> 16;
-    const pair2 = pair & 0xffff;
+const handleTrain = async (text: string) => {
+    const vocabStr = await rl.question("Total target vocabulary size (default 320, min 257): ");
+    
+    // Parse vocab, default to 320, clamp minimum to 257
+    let vocabSize = parseInt(vocabStr, 10);
+    if (isNaN(vocabSize)) vocabSize = 320;
+    if (vocabSize <= 256) vocabSize = 257; 
 
-    let i = 0;
-    const length = tokens.length;
-
-    while (i < length) {
-        const num1 = tokens[i];
-        const num2 = tokens[i + 1];
-
-        if (num1 === undefined) break;
-
-        if (num1 === pair1 && num2 === pair2) {
-            tokensArray.push(newToken);
-            i += 2;
-        } else {
-            tokensArray.push(num1);
-            i++;
-        }
-    }
-
-    return tokensArray;
-};
-
-const tokenize = () => {
-    const data = fs.readFileSync(path.resolve(__dirname, "data.txt"), "utf-8");
-
-    const bytes = [...Buffer.from(data, "utf-8")];
-
-    const sizeOfVocab = 320;
-
-    const iterations = sizeOfVocab - 256;
-
-    let tokens = [...bytes];
-
-    const DictArr: [number, number][] = [];
-
-    for (let i = 0; i < iterations; i++) {
-        const [maxCount, pairKey] = getPairStats(tokens);
-
-        if (maxCount < 2) break;
-        const newToken = i + 256;
-
-        tokens = tokenSwapping({
-            tokens: tokens,
-            pair: pairKey,
-            newToken: newToken,
-        });
-
-        DictArr.push([pairKey, newToken]);
-    }
-
-    const RevDict = new Map<number, [number, number]>();
-
-    for (let i = 0; i < DictArr.length; i++) {
-        const item = DictArr[i];
-
-        if (item === undefined) break;
-
-        const key = item[1];
-        const pairKey = item[0];
-        const pair1 = pairKey >> 16;
-        const pair2 = pairKey & 0xffff;
-
-        const value: [number, number] = [pair1, pair2];
-
-        RevDict.set(key, value);
-    }
-
-    console.log("Original: ", bytes.length);
-    console.log("After Training: ", tokens.length);
-    console.log("After Training: ", DictArr);
-
-    const encode = (str: string) => {
-        let tokens = [...Buffer.from(str, "utf-8")];
-
-        for (let i = 0; i < DictArr.length; i++) {
-            const item = DictArr[i];
-            if (item === undefined) break;
-
-            const key = item[0];
-            const newToken = item[1];
-
-            tokens = tokenSwapping({
-                tokens: tokens,
-                pair: key,
-                newToken: newToken,
-            });
-        }
-
-        return tokens;
+    console.log(`\nTraining BPE on ${text.length} characters (vocab size: ${vocabSize})...`);
+    
+    // Measure performance
+    const start = performance.now();
+    
+    // Run the actual training loop from our clean tokenizer module
+    const { mergeTable, tokens } = train(text, vocabSize);
+    
+    const timeMs = (performance.now() - start).toFixed(2);
+    
+    const originalBytes = Buffer.from(text, "utf-8").length;
+    const finalTokens = tokens.length;
+    
+    currentMergeTable = mergeTable;
+    currentVocabSize = 256 + mergeTable.length;
+    
+    currentTrainingStats = {
+        timeMs,
+        merges: mergeTable.length,
+        originalBytes,
+        finalTokens,
+        ratio: (originalBytes / finalTokens).toFixed(2),
+        spaceSaved: (((originalBytes - finalTokens) / originalBytes) * 100).toFixed(1)
     };
 
-    const decode = (tokens: number[]) => {
-        const bytes = [...tokens];
+    console.log(`✅ Training complete in ${timeMs} ms. Learned ${mergeTable.length} merges (final vocab: ${currentVocabSize}).`);
+};
 
-        for (let i = 0; i < bytes.length; i++) {
-            const item = bytes[i];
-            if (item === undefined) break;
+async function main() {
+    while (true) {
+        printMenu();
+        const choice = await rl.question("Select an option (1-6): ");
 
-            const lookup = RevDict.get(item);
+        switch (choice.trim()) {
+            case "1": {
+                const text = await rl.question("Enter text to train on: ");
+                if (!text) {
+                    console.log("❌ Empty text.");
+                    break;
+                }
+                await handleTrain(text);
+                break;
+            }
+            case "2": {
+                const dataPath = path.resolve(__dirname, "data", "data.txt");
+                if (!fs.existsSync(dataPath)) {
+                    console.log(`❌ Could not find file: ${dataPath}`);
+                    break;
+                }
+                const text = fs.readFileSync(dataPath, "utf-8");
+                await handleTrain(text);
+                break;
+            }
+            case "3": {
+                if (!currentMergeTable) {
+                    console.log("❌ You must train the tokenizer first! (Option 1 or 2)");
+                    break;
+                }
+                const text = await rl.question("Enter text to encode: ");
+                
+                const start = performance.now();
+                const tokens = encode(text, currentMergeTable);
+                const timeMs = (performance.now() - start).toFixed(3);
+                
+                console.log(`\nEncoded Tokens: [${tokens.join(", ")}]`);
+                console.log(`Compression: ${Buffer.from(text).length} bytes → ${tokens.length} tokens`);
+                console.log(`Encode time: ${timeMs} ms`);
+                break;
+            }
+            case "4": {
+                if (!currentMergeTable) {
+                    console.log("❌ You must train the tokenizer first! (Option 1 or 2)");
+                    break;
+                }
+                const tokenStr = await rl.question("Enter comma-separated token IDs (e.g. 104, 256, 111): ");
+                try {
+                    const cleanStr = tokenStr.replace(/['"\[\]]/g, "");
+                    const tokens = cleanStr.split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                    
+                    const start = performance.now();
+                    const text = decode(tokens, currentMergeTable);
+                    const timeMs = (performance.now() - start).toFixed(3);
+                    
+                    console.log(`\nDecoded Text: "${text}"`);
+                    console.log(`Decode time: ${timeMs} ms`);
+                } catch (err) {
+                    console.log("❌ Invalid token format.");
+                }
+                break;
+            }
+            case "5": {
+                if (!currentMergeTable || !currentTrainingStats) {
+                    console.log("❌ No training data available yet.");
+                    break;
+                }
+                
+                console.log("\n╔══════════════════════════════════════════╗");
+                console.log("║         BPE TOKENIZER — SUMMARY          ║");
+                console.log("╚══════════════════════════════════════════╝\n");
 
-            if (lookup != null) {
-                bytes[i] = lookup[0];
-                bytes.splice(i + 1, 0, lookup[1]);
-                i--;
+                console.log("── Training ────────────────────────────────");
+                console.log(`  Training time       : ${currentTrainingStats.timeMs} ms`);
+                console.log(`  Learned merges      : ${currentTrainingStats.merges}`);
+                console.log(`  Final vocab size    : ${currentVocabSize}`);
+
+                console.log("\n── Compression ─────────────────────────────");
+                console.log(`  Original tokens     : ${currentTrainingStats.originalBytes} (raw bytes)`);
+                console.log(`  After BPE           : ${currentTrainingStats.finalTokens} tokens`);
+                console.log(`  Compression ratio   : ${currentTrainingStats.ratio}x`);
+                console.log(`  Space saved         : ${currentTrainingStats.spaceSaved}%`);
+                break;
+            }
+            case "6": {
+                console.log("Goodbye! 👋");
+                rl.close();
+                process.exit(0);
+            }
+            default: {
+                console.log("❌ Invalid option.");
+                break;
             }
         }
+    }
+}
 
-        return Buffer.from(bytes).toString("utf-8");
-    };
-};
-
-tokenize();
+// Start the CLI
+main().catch(console.error);
