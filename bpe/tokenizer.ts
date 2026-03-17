@@ -2,9 +2,9 @@
  * Byte-Pair Encoding (BPE) Tokenizer
  *
  * What is BPE?
- * Instead of treating every word as a token (which creates a massive vocabulary) or 
+ * Instead of treating every word as a token (which creates a massive vocabulary) or
  * every character as a token (which makes sequences too long), BPE finds a middle ground.
- * It starts with characters (bytes) and repeatedly merges the most frequently occurring 
+ * It starts with characters (bytes) and repeatedly merges the most frequently occurring
  * adjacent pair into a new, single token.
  *
  * Beginner's Guide to this implementation:
@@ -12,9 +12,11 @@
  * 2. Pairs: We need to count pairs of tokens (e.g., token 65 next to token 32).
  * 3. Bit-packing: To efficiently store pairs like [65, 32], we pack them into a single 32-bit integer:
  *    `(65 << 16) | 32`. This is much faster than using strings like "65-32".
- * 4. Merging: We find the most frequent pair, coin a new token ID (e.g., 256), and replace 
+ * 4. Merging: We find the most frequent pair, coin a new token ID (e.g., 256), and replace
  *    all occurrences of the pair with the new ID.
  */
+
+import preTokenize from "./preTokenizer";
 
 // A tuple representing [pairKey, new_token_id]
 export type Merge = [number, number];
@@ -27,7 +29,7 @@ export interface TrainingResult {
 
 /**
  * Finds the most frequently occurring adjacent pair of tokens in an array.
- * 
+ *
  * @param tokens - Array of current tokens
  * @returns A tuple of [maxCount, pairKey], where pairKey is the bit-packed representation of the pair.
  */
@@ -43,11 +45,12 @@ function findMostFrequentPair(tokens: number[]): [number, number] {
 
         // If we hit undefined, we've reached the end of valid data in the array.
         if (num1 === undefined || num2 === undefined) break;
+        if (num1 === -1 || num2 === -1) continue;
 
         // Bit-pack the two 16-bit tokens into a single 32-bit number for fast Map lookup.
         // Example: num1 = 65, num2 = 32 ==> pair = (65 << 16) | 32
         const pair = (num1 << 16) | num2;
-        
+
         // Increment the count for this pair
         const count = (stats.get(pair) ?? 0) + 1;
 
@@ -56,7 +59,7 @@ function findMostFrequentPair(tokens: number[]): [number, number] {
             maxPair = pair;
             maxCount = count;
         }
-        
+
         stats.set(pair, count);
     }
 
@@ -66,15 +69,19 @@ function findMostFrequentPair(tokens: number[]): [number, number] {
 /**
  * Sweeps through the tokens array and replaces all non-overlapping occurrences of the target pair
  * with the new token ID.
- * 
- * @param tokens - The array of current tokens 
+ *
+ * @param tokens - The array of current tokens
  * @param pairKey - The bit-packed representation of the pair to replace
  * @param newToken - The new token ID to insert
  * @returns A new array of tokens with the replacements made
  */
-function replacePair(tokens: number[], pairKey: number, newToken: number): number[] {
+function replacePair(
+    tokens: number[],
+    pairKey: number,
+    newToken: number,
+): number[] {
     const newTokens: number[] = [];
-    
+
     // Unpack the 32-bit integer back into the original two tokens
     const pair1 = pairKey >> 16;
     const pair2 = pairKey & 0xffff; // 0xffff masks out the upper 16 bits, leaving only the lower 16 bits
@@ -92,6 +99,9 @@ function replacePair(tokens: number[], pairKey: number, newToken: number): numbe
         if (num1 === pair1 && num2 === pair2) {
             newTokens.push(newToken);
             i += 2;
+        } else if (num1 === -1 || num2 === -1) {
+            newTokens.push(num1);
+            i += 1;
         } else {
             // Otherwise, keep the current token and move ahead by 1
             newTokens.push(num1);
@@ -104,22 +114,24 @@ function replacePair(tokens: number[], pairKey: number, newToken: number): numbe
 
 /**
  * Trains a BPE tokenizer on the given UTF-8 text.
- * 
+ *
  * @param text - The raw text to train on
  * @param targetVocabSize - The desired total vocabulary size (must be >= 256)
  * @returns An object containing the learned merge table and the final compressed tokens
  */
 export function train(text: string, targetVocabSize: number): TrainingResult {
     if (targetVocabSize <= 256) {
-        throw new Error("Target vocabulary size must be greater than 256 (base UTF-8 size).");
+        throw new Error(
+            "Target vocabulary size must be greater than 256 (base UTF-8 size).",
+        );
     }
 
-    // Concept: A string is just a sequence of bytes. In JS, Buffer.from converts a string 
+    // Concept: A string is just a sequence of bytes. In JS, Buffer.from converts a string
     // into its raw UTF-8 byte representation (0-255). We start with these raw bytes as our initial tokens.
-    let tokens = Array.from(Buffer.from(text, "utf-8"));
-    
+
     const iterations = targetVocabSize - 256;
     const mergeTable: MergeTable = [];
+    let tokens: number[] = preTokenize(text);
 
     // The core BPE loop
     for (let i = 0; i < iterations; i++) {
@@ -144,7 +156,7 @@ export function train(text: string, targetVocabSize: number): TrainingResult {
 
 /**
  * Encodes a string into an array of BPE tokens using a previously learned merge table.
- * 
+ *
  * @param text - The input string to encode
  * @param mergeTable - The learned merge rules from the `train` step
  * @returns Array of token IDs
@@ -169,7 +181,7 @@ export function encode(text: string, mergeTable: MergeTable): number[] {
 
 /**
  * Decodes an array of BPE tokens back into a standard string using the merge table.
- * 
+ *
  * @param tokens - The array of token IDs to decode
  * @param mergeTable - The learned merge rules from the `train` step
  * @returns The original string
@@ -185,7 +197,7 @@ export function decode(tokens: number[], mergeTable: MergeTable): string {
 
         const pairKey = item[0];
         const newToken = item[1];
-        
+
         // Unpack the key
         const pair1 = pairKey >> 16;
         const pair2 = pairKey & 0xffff;
@@ -209,9 +221,9 @@ export function decode(tokens: number[], mergeTable: MergeTable): string {
             bytes[i] = lookup[0];
             // Insert its second child right after it
             bytes.splice(i + 1, 0, lookup[1]);
-            
+
             // Crucial step: We decrement `i` so that on the next iteration of the loop,
-            // we process the *first child* we just inserted. This child might ITSELF be 
+            // we process the *first child* we just inserted. This child might ITSELF be
             // a merged token that needs further unpacking! (Recursive unpacking trick)
             i--;
         }
