@@ -50,10 +50,7 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
   return words;
 };
 
-// const result = encodeWord("playing", vocab);
-// console.log(result);
-
-const encode = (text: string): string[] => {
+export const encode = (text: string): string[] => {
   const chunks = preTokenize(text);
   const tokens: string[] = [];
 
