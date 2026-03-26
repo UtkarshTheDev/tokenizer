@@ -57,8 +57,10 @@ export const encode = (text: string): string[] => {
   const tokens: string[] = [];
 
   for (const chunk of chunks) {
-    if (PUNCTUATIONS.has(chunk)) {
+    if (PUNCTUATIONS.has(chunk) && vocab.has(chunk)) {
       tokens.push(chunk);
+    } else if (PUNCTUATIONS.has(chunk)) {
+      tokens.push("[UNK]");
     } else {
       const token = encodeWord(chunk, vocab);
       tokens.push(...token);
