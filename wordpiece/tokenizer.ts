@@ -52,7 +52,7 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
   return words;
 };
 
-export const encode = (text: string): string[] => {
+export const encode = (text: string, vocab: Set<string>): string[] => {
   const chunks = preTokenize(text);
   const tokens: string[] = [];
 
@@ -67,4 +67,22 @@ export const encode = (text: string): string[] => {
     }
   }
   return tokens;
+};
+
+export const decode = (tokens: string[]): string => {
+  let string = "";
+  for (const token of tokens) {
+    if (token.slice(0, 2) === "##") {
+      string += token.slice(2, token.length);
+    } else if (PUNCTUATIONS.has(token)) {
+      string += token;
+    } else {
+      if (string.length === 0) {
+        string = token;
+      } else {
+        string += ` ${token}`;
+      }
+    }
+  }
+  return string;
 };
