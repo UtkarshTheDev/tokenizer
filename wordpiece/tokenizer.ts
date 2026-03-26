@@ -19,6 +19,40 @@ const vocab = new Set([
   ".",
 ]);
 
+const tokenToId = new Map([
+  ["[UNK]", 0],
+  ["play", 1],
+  ["##ing", 2],
+  ["##er", 3],
+  ["##ed", 4],
+  ["hello", 5],
+  ["world", 6],
+  ["!", 7],
+  [",", 8],
+  [".", 9],
+  ["token", 10],
+  ["##s", 11],
+  ["##ize", 12],
+  ["##izer", 13],
+]);
+
+const idToToken = [
+  "[UNK]",
+  "play",
+  "##ing",
+  "##er",
+  "##ed",
+  "hello",
+  "world",
+  "!",
+  ",",
+  ".",
+  "token",
+  "##s",
+  "##ize",
+  "##izer",
+];
+
 const encodeWord = (word: string, vocab: Set<string>): string[] => {
   let start = 0;
   let end = word.length;
@@ -52,10 +86,10 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
   return words;
 };
 
-export const encode = (text: string, vocab: Set<string>): string[] => {
+export const encode = (text: string, vocab: Set<string>): number[] => {
   const chunks = preTokenize(text);
   const tokens: string[] = [];
-
+  const tokensID: number[] = [];
   for (const chunk of chunks) {
     if (PUNCTUATIONS.has(chunk) && vocab.has(chunk)) {
       tokens.push(chunk);
@@ -66,21 +100,38 @@ export const encode = (text: string, vocab: Set<string>): string[] => {
       tokens.push(...token);
     }
   }
-  return tokens;
+  for (const token of tokens) {
+    const tokenId = tokenToId.get(token);
+    if (tokenId === undefined) tokensID.push(0);
+    else {
+      tokensID.push(tokenId);
+    }
+  }
+  return tokensID;
 };
 
-export const decode = (tokens: string[]): string => {
-  let string = "";
+export const decode = (tokens: number[]): string => {
+  const chunks: string[] = [];
+
   for (const token of tokens) {
-    if (token.slice(0, 2) === "##") {
-      string += token.slice(2, token.length);
-    } else if (PUNCTUATIONS.has(token)) {
-      string += token;
+    const chunk = idToToken[token];
+    if (chunk === undefined) chunks.push("[UNK]");
+    else {
+      chunks.push(chunk);
+    }
+  }
+
+  let string = "";
+  for (const chunk of chunks) {
+    if (chunk.slice(0, 2) === "##") {
+      string += chunk.slice(2, chunk.length);
+    } else if (PUNCTUATIONS.has(chunk)) {
+      string += chunk;
     } else {
       if (string.length === 0) {
-        string = token;
+        string = chunk;
       } else {
-        string += ` ${token}`;
+        string += ` ${chunk}`;
       }
     }
   }
