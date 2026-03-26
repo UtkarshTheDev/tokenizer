@@ -7,14 +7,43 @@ import {
   wordFreq,
 } from "./trainHelpers";
 
+/**
+ * WordPiece Tokenizer
+ *
+ * This file contains the full runtime pipeline:
+ * - `encodeWord()` handles one word with greedy longest-match search
+ * - `encode()` handles full text and converts pieces to token IDs
+ * - `decode()` rebuilds text from token IDs
+ * - `train()` connects the training helpers into one top-level function
+ *
+ * The most important idea in this file is:
+ * WordPiece does not replay merge rules like BPE. Instead, it looks at the
+ * current word and greedily chooses the longest vocabulary piece that fits.
+ */
+
+/**
+ * Encode one word into WordPiece token strings.
+ *
+ * Example:
+ *   "playing" -> ["play", "##ing"]
+ *
+ * This function uses a two-pointer style search:
+ * - `start` marks where the current piece begins
+ * - `end` shrinks backward until a matching vocabulary piece is found
+ *
+ * If `start === 0`, the candidate is checked as a normal token.
+ * If `start > 0`, the candidate is checked as a continuation token by adding
+ * the `##` prefix.
+ */
 const encodeWord = (word: string, model: WordPieceModel): string[] => {
   let start = 0;
   let end = word.length;
-  let candidate: string;
   const words: string[] = [];
   let isMatched = false;
 
   while (end > start) {
+    let candidate: string;
+
     if (start === 0) {
       candidate = word.slice(start, end);
     } else {
@@ -23,6 +52,7 @@ const encodeWord = (word: string, model: WordPieceModel): string[] => {
 
     if (model.tokenToId.has(candidate)) {
       start = end;
+
       // Reset to the full word so the next pass can shrink from the end again.
       end = word.length + 1;
       isMatched = true;
@@ -40,21 +70,38 @@ const encodeWord = (word: string, model: WordPieceModel): string[] => {
   return words;
 };
 
+/**
+ * Encode a full text string into token IDs.
+ *
+ * Flow:
+ * 1. lowercase the text
+ * 2. pre-tokenize it into chunks like words and punctuation
+ * 3. encode each word chunk with WordPiece
+ * 4. convert the token strings into numeric IDs
+ *
+ * This implementation lowercases input because the current learning model and
+ * training pipeline are built around lowercase tokens.
+ */
 export const encode = (text: string, model: WordPieceModel): number[] => {
   const normalizedText = text.toLowerCase();
   const chunks = preTokenize(normalizedText);
   const tokens: string[] = [];
   const tokensID: number[] = [];
   for (const chunk of chunks) {
+    // Known punctuation can go straight through as a single token.
     if (PUNCTUATIONS.has(chunk) && model.tokenToId.has(chunk)) {
       tokens.push(chunk);
     } else if (PUNCTUATIONS.has(chunk)) {
+      // Unknown punctuation falls back to the unknown token.
       tokens.push(model.unkToken);
     } else {
       const token = encodeWord(chunk, model);
       tokens.push(...token);
     }
   }
+
+  // Convert token strings into ids. This is the final representation that the
+  // rest of the system works with.
   for (const token of tokens) {
     const tokenId = model.tokenToId.get(token);
     if (tokenId === undefined) {
@@ -68,6 +115,14 @@ export const encode = (text: string, model: WordPieceModel): number[] => {
   return tokensID;
 };
 
+/**
+ * Decode token IDs back into readable text.
+ *
+ * The important spacing rules are:
+ * - continuation tokens (`##...`) attach to the previous word
+ * - punctuation attaches without a leading space
+ * - normal tokens start a new word
+ */
 export const decode = (tokens: number[], model: WordPieceModel): string => {
   const chunks: string[] = [];
 
@@ -81,11 +136,14 @@ export const decode = (tokens: number[], model: WordPieceModel): string => {
 
   let string = "";
   for (const chunk of chunks) {
+    // Remove the continuation prefix and glue the piece onto the previous word.
     if (chunk.slice(0, 2) === "##") {
       string += chunk.slice(2, chunk.length);
     } else if (PUNCTUATIONS.has(chunk)) {
+      // Punctuation is attached directly to the text built so far.
       string += chunk;
     } else {
+      // A normal token starts a new word unless it is the first token.
       if (string.length === 0) {
         string = chunk;
       } else {
@@ -96,6 +154,15 @@ export const decode = (tokens: number[], model: WordPieceModel): string => {
   return string;
 };
 
+/**
+ * Train a WordPiece model from raw corpus text.
+ *
+ * This top-level function stays intentionally small. It wires together the
+ * training helpers in the same order you would explain them to a beginner:
+ * - count words
+ * - grow a vocabulary
+ * - turn that vocabulary into a model
+ */
 export const train = (corpus: string, size: number): WordPieceModel => {
   const freq = wordFreq(corpus);
 
