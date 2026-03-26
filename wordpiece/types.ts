@@ -1,9 +1,22 @@
+/**
+ * This is the model object used by the WordPiece tokenizer.
+ *
+ * We keep both directions of lookup because encode and decode need opposite
+ * operations:
+ * - `tokenToId` lets us turn token strings like `"##ing"` into integers
+ * - `idToToken` lets us turn integers back into token strings
+ *
+ * `unkToken` stores the special token used when a word cannot be segmented
+ * with the current vocabulary.
+ */
 export interface WordPieceModel {
   tokenToId: Map<string, number>;
   idToToken: string[];
   unkToken: string;
 }
 
+// This sample model is intentionally tiny. It exists for learning, examples,
+// and tests. A real trained model would usually have a much larger vocabulary.
 const tokenToId = new Map([
   ["[UNK]", 0],
   ["play", 1],

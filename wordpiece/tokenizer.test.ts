@@ -3,6 +3,10 @@ import { model } from "./types";
 import preTokenize from "./preTokenizer";
 import { decode, encode } from "./tokenizer";
 
+// These tests are intentionally small and concrete.
+// They are not only checking correctness; they also act as executable examples
+// of how the current WordPiece implementation is expected to behave.
+
 describe("wordpiece pre-tokenizer", () => {
   test("splits words and punctuation", () => {
     expect(preTokenize("playing, tokenizers!")).toEqual([
