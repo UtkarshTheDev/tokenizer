@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { model } from "./data";
+import { model } from "./types";
 import preTokenize from "./preTokenizer";
 import { decode, encode } from "./tokenizer";
 
@@ -24,6 +24,10 @@ describe("wordpiece pre-tokenizer", () => {
 describe("wordpiece encode", () => {
   test("encodes known text to ids", () => {
     expect(encode("playing!", model)).toEqual([1, 2, 7]);
+  });
+
+  test("normalizes uppercase input before encoding", () => {
+    expect(encode("Playing!", model)).toEqual([1, 2, 7]);
   });
 
   test("encodes unknown text as [UNK]", () => {
