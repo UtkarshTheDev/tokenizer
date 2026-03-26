@@ -1,6 +1,11 @@
-import type { WordPieceModel } from "./data";
+import type { WordPieceModel } from "./types";
 import { PUNCTUATIONS } from "./manualPreTokenizer";
 import preTokenize from "./preTokenizer";
+import {
+  buildModelFromVocabulary,
+  trainVocabulary,
+  wordFreq,
+} from "./trainHelpers";
 
 const encodeWord = (word: string, model: WordPieceModel): string[] => {
   let start = 0;
@@ -36,7 +41,8 @@ const encodeWord = (word: string, model: WordPieceModel): string[] => {
 };
 
 export const encode = (text: string, model: WordPieceModel): number[] => {
-  const chunks = preTokenize(text);
+  const normalizedText = text.toLowerCase();
+  const chunks = preTokenize(normalizedText);
   const tokens: string[] = [];
   const tokensID: number[] = [];
   for (const chunk of chunks) {
@@ -88,4 +94,14 @@ export const decode = (tokens: number[], model: WordPieceModel): string => {
     }
   }
   return string;
+};
+
+export const train = (corpus: string, size: number): WordPieceModel => {
+  const freq = wordFreq(corpus);
+
+  const vocab = trainVocabulary(freq, size);
+
+  const model = buildModelFromVocabulary(vocab);
+
+  return model;
 };
