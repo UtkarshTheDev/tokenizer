@@ -29,6 +29,48 @@ let currentTrainingStats: {
     spaceSaved: string
 } | null = null;
 
+const getAction = (input: string) => {
+    const command = input.trim().toLowerCase();
+
+    switch (command) {
+        case "1":
+        case "select":
+        case "tokenizer":
+            return "select";
+        case "2":
+        case "train":
+            return "train_text";
+        case "3":
+        case "file":
+        case "data":
+        case "trainfile":
+            return "train_file";
+        case "4":
+        case "encode":
+            return "encode";
+        case "5":
+        case "decode":
+            return "decode";
+        case "6":
+        case "stats":
+            return "stats";
+        case "7":
+        case "clear":
+            return "clear";
+        case "8":
+        case "exit":
+        case "quit":
+            return "exit";
+        case "bpe":
+            return "switch_bpe";
+        case "wordpiece":
+        case "wp":
+            return "switch_wordpiece";
+        default:
+            return null;
+    }
+};
+
 const printMenu = () => {
     console.log(`\n🔤 Tokenizer CLI (Current: ${currentTokenizer.toUpperCase()})`);
     console.log(`================================`);
@@ -40,6 +82,7 @@ const printMenu = () => {
     console.log(`6. Show training stats`);
     console.log(`7. Clear screen`);
     console.log(`8. Exit\n`);
+    console.log(`Commands: bpe, wordpiece, train, data, encode, decode, stats, clear, exit\n`);
 };
 
 const handleTrain = async (text: string) => {
@@ -110,17 +153,33 @@ const handleTrain = async (text: string) => {
 async function main() {
     while (true) {
         printMenu();
-        const choice = await rl.question("Select an option (1-8): ");
+        const choice = await rl.question("Select an option or command: ");
+        const action = getAction(choice);
 
-        switch (choice.trim()) {
-            case "1": {
+        switch (action) {
+            case "switch_bpe": {
+                currentTokenizer = "bpe";
+                console.log("Switched to BPE.");
+                break;
+            }
+            case "switch_wordpiece": {
+                currentTokenizer = "wordpiece";
+                console.log("Switched to WordPiece.");
+                break;
+            }
+            case "select": {
                 const tokenizerChoice = await rl.question(
-                    "Choose tokenizer (`1` = BPE, `2` = WordPiece): ",
+                    "Choose tokenizer (`1`/`bpe` or `2`/`wordpiece`): ",
                 );
-                if (tokenizerChoice.trim() === "1") {
+                const tokenizerCommand = tokenizerChoice.trim().toLowerCase();
+                if (tokenizerCommand === "1" || tokenizerCommand === "bpe") {
                     currentTokenizer = "bpe";
                     console.log("Switched to BPE.");
-                } else if (tokenizerChoice.trim() === "2") {
+                } else if (
+                    tokenizerCommand === "2" ||
+                    tokenizerCommand === "wordpiece" ||
+                    tokenizerCommand === "wp"
+                ) {
                     currentTokenizer = "wordpiece";
                     console.log("Switched to WordPiece.");
                 } else {
@@ -128,7 +187,7 @@ async function main() {
                 }
                 break;
             }
-            case "2": {
+            case "train_text": {
                 const text = await rl.question("Enter text to train on: ");
                 if (!text) {
                     console.log("❌ Empty text.");
@@ -137,7 +196,7 @@ async function main() {
                 await handleTrain(text);
                 break;
             }
-            case "3": {
+            case "train_file": {
                 const dataPath = path.resolve(__dirname, "data", "data.txt");
                 if (!fs.existsSync(dataPath)) {
                     console.log(`❌ Could not find file: ${dataPath}`);
@@ -147,7 +206,7 @@ async function main() {
                 await handleTrain(text);
                 break;
             }
-            case "4": {
+            case "encode": {
                 if (currentTokenizer === "bpe" && !currentMergeTable) {
                     console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
                     break;
@@ -169,7 +228,7 @@ async function main() {
                 console.log(`Encode time: ${timeMs} ms`);
                 break;
             }
-            case "5": {
+            case "decode": {
                 if (currentTokenizer === "bpe" && !currentMergeTable) {
                     console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
                     break;
@@ -196,7 +255,7 @@ async function main() {
                 }
                 break;
             }
-            case "6": {
+            case "stats": {
                 if (!currentTrainingStats) {
                     console.log("❌ No training data available yet.");
                     break;
@@ -222,11 +281,11 @@ async function main() {
                 console.log(`  Space saved         : ${currentTrainingStats.spaceSaved}%`);
                 break;
             }
-            case "7": {
+            case "clear": {
                 console.clear();
                 break;
             }
-            case "8": {
+            case "exit": {
                 console.log("Goodbye! 👋");
                 rl.close();
                 process.exit(0);
