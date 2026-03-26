@@ -1,25 +1,13 @@
+import type { WordPieceModel } from "./types";
 import { PUNCTUATIONS } from "./manualPreTokenizer";
 import preTokenize from "./preTokenizer";
+import {
+  buildModelFromVocabulary,
+  trainVocabulary,
+  wordFreq,
+} from "./trainHelpers";
 
-const vocab = new Set([
-  "[UNK]",
-  "play",
-  "work",
-  "hello",
-  "world",
-  "token",
-  "##ing",
-  "##er",
-  "##ed",
-  "##s",
-  "##ize",
-  "##izer",
-  "!",
-  ",",
-  ".",
-]);
-
-const encodeWord = (word: string, vocab: Set<string>): string[] => {
+const encodeWord = (word: string, model: WordPieceModel): string[] => {
   let start = 0;
   let end = word.length;
   let candidate: string;
@@ -33,7 +21,7 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
       candidate = `##${word.slice(start, end)}`;
     }
 
-    if (vocab.has(candidate)) {
+    if (model.tokenToId.has(candidate)) {
       start = end;
       // Reset to the full word so the next pass can shrink from the end again.
       end = word.length + 1;
@@ -46,25 +34,74 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
     end--;
     // If no substring matched for the current segment, the whole word is unknown.
     if (start === end && isMatched === false) {
-      return ["[UNK]"];
+      return [model.unkToken];
     }
   }
   return words;
 };
 
-export const encode = (text: string): string[] => {
-  const chunks = preTokenize(text);
+export const encode = (text: string, model: WordPieceModel): number[] => {
+  const normalizedText = text.toLowerCase();
+  const chunks = preTokenize(normalizedText);
   const tokens: string[] = [];
-
+  const tokensID: number[] = [];
   for (const chunk of chunks) {
-    if (PUNCTUATIONS.has(chunk) && vocab.has(chunk)) {
+    if (PUNCTUATIONS.has(chunk) && model.tokenToId.has(chunk)) {
       tokens.push(chunk);
     } else if (PUNCTUATIONS.has(chunk)) {
-      tokens.push("[UNK]");
+      tokens.push(model.unkToken);
     } else {
-      const token = encodeWord(chunk, vocab);
+      const token = encodeWord(chunk, model);
       tokens.push(...token);
     }
   }
-  return tokens;
+  for (const token of tokens) {
+    const tokenId = model.tokenToId.get(token);
+    if (tokenId === undefined) {
+      const unkTokenID = model.tokenToId.get(model.unkToken);
+      if (unkTokenID === undefined) break;
+      tokensID.push(unkTokenID);
+    } else {
+      tokensID.push(tokenId);
+    }
+  }
+  return tokensID;
+};
+
+export const decode = (tokens: number[], model: WordPieceModel): string => {
+  const chunks: string[] = [];
+
+  for (const token of tokens) {
+    const chunk = model.idToToken[token];
+    if (chunk === undefined) chunks.push(model.unkToken);
+    else {
+      chunks.push(chunk);
+    }
+  }
+
+  let string = "";
+  for (const chunk of chunks) {
+    if (chunk.slice(0, 2) === "##") {
+      string += chunk.slice(2, chunk.length);
+    } else if (PUNCTUATIONS.has(chunk)) {
+      string += chunk;
+    } else {
+      if (string.length === 0) {
+        string = chunk;
+      } else {
+        string += ` ${chunk}`;
+      }
+    }
+  }
+  return string;
+};
+
+export const train = (corpus: string, size: number): WordPieceModel => {
+  const freq = wordFreq(corpus);
+
+  const vocab = trainVocabulary(freq, size);
+
+  const model = buildModelFromVocabulary(vocab);
+
+  return model;
 };
