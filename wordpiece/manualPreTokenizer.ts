@@ -54,7 +54,7 @@ export default function manualPreTokenize(str: string): string[] {
         start = -1;
       }
       tokens.push(char);
-    } else if (char === " ") {
+    } else if (/\s/.test(char)) {
       if (start !== -1) {
         tokens.push(str.slice(start, i));
         start = -1;

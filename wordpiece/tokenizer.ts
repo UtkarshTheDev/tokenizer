@@ -35,6 +35,7 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
 
     if (vocab.has(candidate)) {
       start = end;
+      // Reset to the full word so the next pass can shrink from the end again.
       end = word.length + 1;
       isMatched = true;
       words.push(candidate);
@@ -43,6 +44,7 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
     }
 
     end--;
+    // If no substring matched for the current segment, the whole word is unknown.
     if (start === end && isMatched === false) {
       return ["[UNK]"];
     }
@@ -54,9 +56,7 @@ export const encode = (text: string): string[] => {
   const chunks = preTokenize(text);
   const tokens: string[] = [];
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    if (chunk === undefined) break;
+  for (const chunk of chunks) {
     if (PUNCTUATIONS.has(chunk)) {
       tokens.push(chunk);
     } else {
@@ -66,5 +66,3 @@ export const encode = (text: string): string[] => {
   }
   return tokens;
 };
-
-console.log(encode("playing!"));
