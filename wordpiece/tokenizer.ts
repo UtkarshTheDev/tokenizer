@@ -1,3 +1,6 @@
+import { PUNCTUATIONS } from "./manualPreTokenizer";
+import preTokenize from "./preTokenizer";
+
 const vocab = new Set([
   "[UNK]",
   "play",
@@ -47,5 +50,24 @@ const encodeWord = (word: string, vocab: Set<string>): string[] => {
   return words;
 };
 
-const result = encodeWord("playing", vocab);
-console.log(result);
+// const result = encodeWord("playing", vocab);
+// console.log(result);
+
+const encode = (text: string): string[] => {
+  const chunks = preTokenize(text);
+  const tokens: string[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    if (chunk === undefined) break;
+    if (PUNCTUATIONS.has(chunk)) {
+      tokens.push(chunk);
+    } else {
+      const token = encodeWord(chunk, vocab);
+      tokens.push(...token);
+    }
+  }
+  return tokens;
+};
+
+console.log(encode("playing!"));

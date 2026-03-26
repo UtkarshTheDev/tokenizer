@@ -1,4 +1,4 @@
-const PUNCTUATIONS = new Set([
+export const PUNCTUATIONS = new Set([
   ".",
   ",",
   "!",
