@@ -38,7 +38,8 @@ const printMenu = () => {
     console.log(`4. Encode text`);
     console.log(`5. Decode tokens`);
     console.log(`6. Show training stats`);
-    console.log(`7. Exit\n`);
+    console.log(`7. Clear screen`);
+    console.log(`8. Exit\n`);
 };
 
 const handleTrain = async (text: string) => {
@@ -109,7 +110,7 @@ const handleTrain = async (text: string) => {
 async function main() {
     while (true) {
         printMenu();
-        const choice = await rl.question("Select an option (1-7): ");
+        const choice = await rl.question("Select an option (1-8): ");
 
         switch (choice.trim()) {
             case "1": {
@@ -222,6 +223,10 @@ async function main() {
                 break;
             }
             case "7": {
+                console.clear();
+                break;
+            }
+            case "8": {
                 console.log("Goodbye! 👋");
                 rl.close();
                 process.exit(0);
