@@ -5,6 +5,9 @@ node_modules
 out
 dist
 *.tgz
+models/
+wordpiece.json
+bpe.json
 
 # code coverage
 coverage
