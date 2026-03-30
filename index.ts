@@ -111,6 +111,15 @@ const askModelLocation = async (action: ModelFileAction): Promise<string> => {
   return buildModelLocation(currentTokenizer, raw);
 };
 
+const requiresWordPiecePersistence = (): boolean => {
+  if (currentTokenizer === "wordpiece") {
+    return true;
+  }
+
+  console.log("❌ BPE save/load is not implemented yet.");
+  return false;
+};
+
 const handleTrain = async (text: string) => {
   const defaultVocabSize = currentTokenizer === "bpe" ? 320 : 64;
   const minVocabSize = currentTokenizer === "bpe" ? 257 : 1;
@@ -339,8 +348,7 @@ async function main() {
         break;
       }
       case "save_tokenizer": {
-        if (currentTokenizer !== "wordpiece") {
-          console.log("❌ BPE save/load is not implemented yet.");
+        if (!requiresWordPiecePersistence()) {
           break;
         }
 
@@ -349,31 +357,37 @@ async function main() {
           break;
         }
 
-        const location = await askModelLocation("save");
-        const content = serializeWordpieceModel(currentWordPieceModel);
-        writeJsonFile(__dirname, location, content);
-        console.log(`Saved ${currentTokenizer} tokenizer Model to ${location}`);
+        try {
+          const location = await askModelLocation("save");
+          const content = serializeWordpieceModel(currentWordPieceModel);
+          writeJsonFile(__dirname, location, content);
+          console.log(`Saved ${currentTokenizer} tokenizer model to ${location}`);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to save model.";
+          console.log(`❌ ${message}`);
+        }
         break;
       }
       case "load_tokenizer": {
-        if (currentTokenizer !== "wordpiece") {
-          console.log("❌ BPE save/load is not implemented yet.");
+        if (!requiresWordPiecePersistence()) {
           break;
         }
 
-        const location = await askModelLocation("load");
-        const parsed = readJsonFile(__dirname, location);
+        try {
+          const location = await askModelLocation("load");
+          const parsed = readJsonFile(__dirname, location);
 
-        if (parsed === null) {
-          console.log("❌ Failed to load or parse the JSON file.");
-          break;
-        }
+          if (parsed === null) {
+            console.log("❌ Failed to load or parse the JSON file.");
+            break;
+          }
 
-        if (!isWordPieceSerializedModel(parsed)) {
-          console.log("❌ Parsed JSON is not a valid WordPiece model.");
-          break;
-        }
-        if (parsed.type === "wordpiece") {
+          if (!isWordPieceSerializedModel(parsed)) {
+            console.log("❌ Parsed JSON is not a valid WordPiece model.");
+            break;
+          }
+
           const loadedModel = deserializeWordpieceModel(parsed);
 
           currentTokenizer = "wordpiece";
@@ -381,8 +395,12 @@ async function main() {
           currentMergeTable = null;
           currentVocabSize = loadedModel.idToToken.length;
           currentTrainingStats = null;
+          console.log(`Loaded ${currentTokenizer} model from ${location}`);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to load model.";
+          console.log(`❌ ${message}`);
         }
-        console.log(`Loaded ${currentTokenizer} model from: ${location}`);
         break;
       }
       case "clear": {
