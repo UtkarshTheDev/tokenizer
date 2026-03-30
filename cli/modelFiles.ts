@@ -1,0 +1,94 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { WordPieceSerializedModel } from "../wordpiece/types";
+
+export type TokenizerKind = "bpe" | "wordpiece";
+export type ModelFileAction = "save" | "load";
+
+const MODELS_DIR = "models";
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
+export const buildModelLocation = (
+  tokenizer: TokenizerKind,
+  rawInput: string,
+): string => {
+  let fileName = rawInput.trim();
+
+  if (fileName === "") {
+    fileName = `${tokenizer}.json`;
+  }
+
+  if (!fileName.endsWith(".json")) {
+    fileName = `${fileName}.json`;
+  }
+
+  const hasPathTraversal = fileName.includes("..");
+  const hasDirectorySeparators =
+    fileName.includes("/") || fileName.includes("\\");
+
+  if (hasPathTraversal) {
+    throw new Error(
+      "Path traversal is not allowed. Please use a simple file name.",
+    );
+  }
+
+  if (hasDirectorySeparators) {
+    throw new Error(
+      "Please use only a file name like wordpiece.json, not directories.",
+    );
+  }
+
+  return path.join(MODELS_DIR, fileName);
+};
+
+export const getModelFilePrompt = (
+  tokenizer: TokenizerKind,
+  action: ModelFileAction,
+): string => {
+  return `Enter the filename for ${tokenizer} to ${action} (default: ${tokenizer}.json): `;
+};
+
+export const parseJsonFile = (filePath: string): unknown | null => {
+  try {
+    const fileContents = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(fileContents);
+  } catch {
+    return null;
+  }
+};
+
+export const writeJsonFile = (
+  baseDir: string,
+  location: string,
+  data: unknown,
+): string => {
+  const filePath = path.resolve(baseDir, location);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  return filePath;
+};
+
+export const readJsonFile = (
+  baseDir: string,
+  location: string,
+): unknown | null => {
+  const filePath = path.resolve(baseDir, location);
+  return parseJsonFile(filePath);
+};
+
+export const isWordPieceSerializedModel = (
+  value: unknown,
+): value is WordPieceSerializedModel => {
+  if (!isRecord(value)) return false;
+
+  return (
+    value["type"] === "wordpiece" &&
+    Array.isArray(value["idToToken"]) &&
+    value["idToToken"].every((item) => typeof item === "string") &&
+    value["continuationPrefix"] === "##" &&
+    typeof value["unkToken"] === "string"
+  );
+};
