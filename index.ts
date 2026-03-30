@@ -5,12 +5,13 @@ import * as path from "node:path";
 import {
   buildModelLocation,
   getModelFilePrompt,
-  isWordPieceSerializedModel,
-  readJsonFile,
   type ModelFileAction,
   type TokenizerKind,
-  writeJsonFile,
 } from "./cli/modelFiles";
+import {
+  loadWordPieceModel,
+  saveWordPieceModel,
+} from "./cli/wordpiecePersistence";
 import { train, encode, decode, type MergeTable } from "./bpe/tokenizer";
 import {
   train as trainWordPiece,
@@ -18,10 +19,6 @@ import {
   decode as decodeWordPiece,
 } from "./wordpiece/tokenizer";
 import type { WordPieceModel } from "./wordpiece/types";
-import {
-  deserializeWordpieceModel,
-  serializeWordpieceModel,
-} from "./wordpiece/serializer";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -359,8 +356,7 @@ async function main() {
 
         try {
           const location = await askModelLocation("save");
-          const content = serializeWordpieceModel(currentWordPieceModel);
-          writeJsonFile(__dirname, location, content);
+          saveWordPieceModel(__dirname, location, currentWordPieceModel);
           console.log(`Saved ${currentTokenizer} tokenizer model to ${location}`);
         } catch (error) {
           const message =
@@ -376,19 +372,7 @@ async function main() {
 
         try {
           const location = await askModelLocation("load");
-          const parsed = readJsonFile(__dirname, location);
-
-          if (parsed === null) {
-            console.log("❌ Failed to load or parse the JSON file.");
-            break;
-          }
-
-          if (!isWordPieceSerializedModel(parsed)) {
-            console.log("❌ Parsed JSON is not a valid WordPiece model.");
-            break;
-          }
-
-          const loadedModel = deserializeWordpieceModel(parsed);
+          const loadedModel = loadWordPieceModel(__dirname, location);
 
           currentTokenizer = "wordpiece";
           currentWordPieceModel = loadedModel;
