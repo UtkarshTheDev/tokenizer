@@ -196,12 +196,7 @@ export const buildModelFromVocabulary = (
   tokens = ["[UNK]", ...tokens];
 
   const idToToken = tokens;
-  const tokenToId = new Map<string, number>();
-  for (let index = 0; index < tokens.length; index++) {
-    const token = tokens[index];
-    if (token === undefined) break;
-    tokenToId.set(token, index);
-  }
+  const tokenToId = reverseIdToToken(idToToken);
 
   const model = {
     idToToken,
@@ -210,4 +205,14 @@ export const buildModelFromVocabulary = (
   };
 
   return model;
+};
+
+export const reverseIdToToken = (idToToken: string[]): Map<string, number> => {
+  const tokenToId = new Map<string, number>();
+  for (let index = 0; index < idToToken.length; index++) {
+    const token = idToToken[index];
+    if (token === undefined) break;
+    tokenToId.set(token, index);
+  }
+  return tokenToId;
 };
