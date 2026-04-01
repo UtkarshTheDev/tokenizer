@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { WordPieceSerializedModel } from "../wordpiece/types";
+import type { BpeSerializedModel } from "../bpe/serializer";
 
 export type TokenizerKind = "bpe" | "wordpiece";
 export type ModelFileAction = "save" | "load";
@@ -90,5 +91,21 @@ export const isWordPieceSerializedModel = (
     value["idToToken"].every((item) => typeof item === "string") &&
     value["continuationPrefix"] === "##" &&
     typeof value["unkToken"] === "string"
+  );
+};
+
+export const isBpeSerializedModel = (
+  value: unknown,
+): value is BpeSerializedModel => {
+  if (!isRecord(value)) return false;
+
+  return (
+    value["type"] === "bpe" &&
+    Array.isArray(value["mergeTable"]) &&
+    value["mergeTable"].every(
+      (item) =>
+        Array.isArray(item) && item.every((num) => typeof num === "number"),
+    ) &&
+    value["baseVocabSize"] === 256
   );
 };
