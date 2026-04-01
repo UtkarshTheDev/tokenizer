@@ -49,6 +49,9 @@ export const getModelFilePrompt = (
   tokenizer: TokenizerKind,
   action: ModelFileAction,
 ): string => {
+  if (action === "load") {
+    return `Enter the filename of tokenizer to ${action} (inside: models/): `;
+  }
   return `Enter the filename for ${tokenizer} to ${action} (default: ${tokenizer}.json): `;
 };
 
@@ -108,4 +111,15 @@ export const isBpeSerializedModel = (
     ) &&
     value["baseVocabSize"] === 256
   );
+};
+
+export const parseModelType = (value: unknown): TokenizerKind | undefined => {
+  if (!isRecord(value)) return undefined;
+
+  if (value["type"] === "bpe") {
+    return "bpe";
+  } else if (value["type"] === "wordpiece") {
+    return "wordpiece";
+  }
+  return undefined;
 };
