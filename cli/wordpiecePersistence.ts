@@ -1,11 +1,15 @@
-import { readJsonFile, writeJsonFile } from "./modelFiles";
+import {
+  isBpeSerializedModel,
+  readJsonFile,
+  writeJsonFile,
+} from "./modelFiles";
 import {
   deserializeWordpieceModel,
   serializeWordpieceModel,
 } from "../wordpiece/serializer";
 import type { WordPieceModel } from "../wordpiece/types";
 import { isWordPieceSerializedModel } from "./modelFiles";
-import { serializeBpeModel } from "../bpe/serializer";
+import { deserializeBpeModel, serializeBpeModel } from "../bpe/serializer";
 import type { MergeTable } from "../bpe/tokenizer";
 
 export const saveWordPieceModel = (
@@ -41,4 +45,18 @@ export const loadWordPieceModel = (
   }
 
   return deserializeWordpieceModel(parsed);
+};
+
+export const loadBpeModel = (baseDir: string, location: string): MergeTable => {
+  const parsed = readJsonFile(baseDir, location);
+
+  if (parsed === null) {
+    throw new Error("Failed to load or parse the JSON file.");
+  }
+
+  if (!isBpeSerializedModel(parsed)) {
+    throw new Error("Parsed JSON is not a valid WordPiece model.");
+  }
+
+  return deserializeBpeModel(parsed);
 };
