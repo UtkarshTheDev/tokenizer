@@ -1,10 +1,10 @@
-import type { MergeTable } from "./tokenizer";
+import { BaseVocabSize, type MergeTable } from "./tokenizer";
 
 export interface BpeSerializedModel {
   type: "bpe";
   description?: string;
   version: number;
-  baseVocabSize?: number;
+  baseVocabSize: number;
   mergeCount?: number;
   trainedVocabSize?: number;
   mergeTable: MergeTable;
@@ -15,14 +15,13 @@ export const serializeBpeModel = (
   mergeTable: MergeTable,
 ): BpeSerializedModel => {
   const mergeCount = mergeTable.length;
-  const baseVocabSize = 256; // Will figure out how to fetch it
   const bpeJSON: BpeSerializedModel = {
     type: "bpe",
     description: "Byte Pair Encoding Model",
     version: 1,
-    baseVocabSize: baseVocabSize,
+    baseVocabSize: BaseVocabSize,
     mergeCount: mergeCount,
-    trainedVocabSize: baseVocabSize + mergeCount,
+    trainedVocabSize: BaseVocabSize + mergeCount,
     mergeTable: mergeTable,
   };
 
