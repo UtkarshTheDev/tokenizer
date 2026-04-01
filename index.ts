@@ -5,13 +5,17 @@ import * as path from "node:path";
 import {
   buildModelLocation,
   getModelFilePrompt,
+  parseModelType,
+  readJsonFile,
   type ModelFileAction,
   type TokenizerKind,
 } from "./cli/modelFiles";
 import {
+  loadBpeModel,
   loadWordPieceModel,
+  saveBpeModel,
   saveWordPieceModel,
-} from "./cli/wordpiecePersistence";
+} from "./cli/modelPersistence";
 import { train, encode, decode, type MergeTable } from "./bpe/tokenizer";
 import {
   train as trainWordPiece,
@@ -106,15 +110,6 @@ const printMenu = () => {
 const askModelLocation = async (action: ModelFileAction): Promise<string> => {
   const raw = await rl.question(getModelFilePrompt(currentTokenizer, action));
   return buildModelLocation(currentTokenizer, raw);
-};
-
-const requiresWordPiecePersistence = (): boolean => {
-  if (currentTokenizer === "wordpiece") {
-    return true;
-  }
-
-  console.log("❌ BPE save/load is not implemented yet.");
-  return false;
 };
 
 const handleTrain = async (text: string) => {
@@ -345,19 +340,26 @@ async function main() {
         break;
       }
       case "save_tokenizer": {
-        if (!requiresWordPiecePersistence()) {
-          break;
-        }
-
-        if (currentWordPieceModel === null) {
-          console.log("❌ Train or load a WordPiece model first.");
-          break;
-        }
-
         try {
           const location = await askModelLocation("save");
-          saveWordPieceModel(__dirname, location, currentWordPieceModel);
-          console.log(`Saved ${currentTokenizer} tokenizer model to ${location}`);
+          if (currentTokenizer === "wordpiece") {
+            if (currentWordPieceModel === null) {
+              console.log("❌ Train or load a WordPiece model first.");
+              break;
+            }
+            saveWordPieceModel(__dirname, location, currentWordPieceModel);
+          } else if (currentTokenizer === "bpe") {
+            if (currentMergeTable === null) {
+              console.log(
+                "❌ Train or load a Byte Pair Encoding(BPE) model first.",
+              );
+              break;
+            }
+            saveBpeModel(__dirname, location, currentMergeTable);
+          }
+          console.log(
+            `Saved ${currentTokenizer} tokenizer model to ${location}`,
+          );
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Failed to save model.";
@@ -366,18 +368,28 @@ async function main() {
         break;
       }
       case "load_tokenizer": {
-        if (!requiresWordPiecePersistence()) {
-          break;
-        }
-
         try {
           const location = await askModelLocation("load");
-          const loadedModel = loadWordPieceModel(__dirname, location);
+          const parse = readJsonFile(__dirname, location);
+          if (parse === null) {
+            throw new Error("Failed to load or parse the JSON file.");
+          }
+          const type = parseModelType(parse);
+          if (type === undefined) {
+            throw new Error(
+              "Failed to parse the type of Model from JSON file.",
+            );
+          }
 
-          currentTokenizer = "wordpiece";
-          currentWordPieceModel = loadedModel;
-          currentMergeTable = null;
-          currentVocabSize = loadedModel.idToToken.length;
+          if (type === "bpe") {
+            const loadedModel = loadBpeModel(parse);
+            currentMergeTable = loadedModel;
+            currentVocabSize = loadedModel.length;
+          } else if (type === "wordpiece") {
+            const loadedModel = loadWordPieceModel(parse);
+            currentWordPieceModel = loadedModel;
+            currentVocabSize = loadedModel.idToToken.length;
+          }
           currentTrainingStats = null;
           console.log(`Loaded ${currentTokenizer} model from ${location}`);
         } catch (error) {
