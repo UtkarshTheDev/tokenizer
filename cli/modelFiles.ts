@@ -13,9 +13,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 };
 
 export const buildModelLocation = (
-  tokenizer: TokenizerKind,
+  tokenizer: TokenizerKind | null,
   rawInput: string,
 ): string => {
+  if (tokenizer === null) {
+    throw new Error(
+      "Enter the file name to load tokenizer. Empty file names are not allowed.",
+    );
+  }
+
   let fileName = rawInput.trim();
 
   if (fileName === "") {
@@ -107,9 +113,12 @@ export const isBpeSerializedModel = (
     Array.isArray(value["mergeTable"]) &&
     value["mergeTable"].every(
       (item) =>
-        Array.isArray(item) && item.every((num) => typeof num === "number"),
+        Array.isArray(item) &&
+        item.length === 2 &&
+        item.every((num) => typeof num === "number"),
     ) &&
-    value["baseVocabSize"] === 256
+    value["baseVocabSize"] === 256 &&
+    typeof value["version"] === "number"
   );
 };
 
