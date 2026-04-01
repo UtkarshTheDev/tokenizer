@@ -5,6 +5,8 @@ import {
 } from "../wordpiece/serializer";
 import type { WordPieceModel } from "../wordpiece/types";
 import { isWordPieceSerializedModel } from "./modelFiles";
+import { serializeBpeModel } from "../bpe/serializer";
+import type { MergeTable } from "../bpe/tokenizer";
 
 export const saveWordPieceModel = (
   baseDir: string,
@@ -12,6 +14,15 @@ export const saveWordPieceModel = (
   model: WordPieceModel,
 ): void => {
   const content = serializeWordpieceModel(model);
+  writeJsonFile(baseDir, location, content);
+};
+
+export const saveBpeModel = (
+  baseDir: string,
+  location: string,
+  model: MergeTable,
+): void => {
+  const content = serializeBpeModel(model);
   writeJsonFile(baseDir, location, content);
 };
 
