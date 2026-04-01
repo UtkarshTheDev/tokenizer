@@ -209,7 +209,7 @@ The CLI supports both **BPE** and **WordPiece**.
 When you run it, you can use either:
 
 - the numbered menu
-- or direct commands like `bpe`, `wordpiece`, `train`, `encode`, `decode`
+- or direct commands like `bpe`, `wordpiece`, `train`, `encode`, `decode`, `save`, `load`
 
 ### Main actions
 
@@ -220,9 +220,11 @@ When you run it, you can use either:
 | `data` or `3` | Train on `data/data.txt` |
 | `encode` or `4` | Convert text into token IDs |
 | `decode` or `5` | Convert token IDs back into text |
-| `stats` or `6` | Show training stats |
-| `clear` or `7` | Clear the terminal |
-| `exit` or `8` | Exit the CLI |
+| `save` or `6` | Save the currently active tokenizer model to `models/` |
+| `load` or `7` | Load a tokenizer model from `models/` into memory |
+| `stats` or `8` | Show training stats |
+| `clear` | Clear the terminal |
+| `exit` or `quit` | Exit the CLI |
 | `bpe` | Switch directly to BPE |
 | `wordpiece` / `wp` | Switch directly to WordPiece |
 
@@ -297,6 +299,31 @@ Example:
 ```
 
 This makes experimentation easier because you do not lose the model that is already loaded for the other tokenizer.
+
+### Save and load command examples
+
+#### Save the active tokenizer
+
+```txt
+1. Train or load a tokenizer first
+2. Type: save
+3. Press Enter to use the default file:
+   - bpe -> models/bpe.json
+   - wordpiece -> models/wordpiece.json
+4. Or type a custom name like:
+   - my-bpe-model
+   - lesson-1-wordpiece.json
+```
+
+#### Load a tokenizer model
+
+```txt
+1. Type: load
+2. Press Enter to load the default file for the active tokenizer
+3. Or type a saved file name from models/
+4. The CLI loads that tokenizer into memory
+5. If it is different from the active tokenizer, the active tokenizer stays unchanged
+```
 
 ---
 
