@@ -33,6 +33,10 @@ import type { WordPieceModel } from "./wordpiece/types";
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
 
+// The CLI keeps one "slot" for each tokenizer type.
+// This lets a learner load or train BPE and WordPiece models in the same session
+// without throwing the other one away. `currentTokenizer` only tells us which
+// slot encode/decode/train commands should use right now.
 let currentMergeTable: MergeTable | null = null;
 let currentWordPieceModel: WordPieceModel | null = null;
 let currentTokenizer: TokenizerKind = "bpe";
@@ -351,6 +355,9 @@ async function main() {
       case "save_tokenizer": {
         try {
           const location = await askModelLocation("save");
+
+          // Save whichever tokenizer is currently active. The persistence helpers
+          // convert our runtime model into a JSON-friendly file format.
           if (currentTokenizer === "wordpiece") {
             if (currentWordPieceModel === null) {
               console.log("❌ Train or load a WordPiece model first.");
@@ -383,6 +390,9 @@ async function main() {
           if (parse === null) {
             throw new Error("Failed to load or parse the JSON file.");
           }
+
+          // We look at the saved JSON first to learn which tokenizer family it
+          // belongs to. Only after that do we call the matching loader.
           const type = parseModelType(parse);
           if (type === undefined) {
             throw new Error(
@@ -399,6 +409,9 @@ async function main() {
             currentWordPieceModel = loadedModel;
             currentVocabSize = loadedModel.idToToken.length;
           }
+
+          // Important UX choice: loading a model fills that tokenizer's slot,
+          // but it does not switch the active tokenizer automatically.
           currentTrainingStats = null;
           if (type === currentTokenizer) {
             console.log(`Loaded ${type.toUpperCase()} model from ${location}`);

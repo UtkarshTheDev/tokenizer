@@ -16,6 +16,8 @@ export const buildModelLocation = (
   tokenizer: TokenizerKind,
   rawInput: string,
 ): string => {
+  // Save/load always lives inside the local models directory. We normalize the
+  // user's input so pressing Enter gets a sensible default file name.
   let fileName = rawInput.trim();
 
   if (fileName === "") {
@@ -30,6 +32,8 @@ export const buildModelLocation = (
   const hasDirectorySeparators =
     fileName.includes("/") || fileName.includes("\\");
 
+  // This CLI accepts simple file names like "wordpiece.json". We reject path
+  // segments so users cannot accidentally write outside the models folder.
   if (hasPathTraversal) {
     throw new Error(
       "Path traversal is not allowed. Please use a simple file name.",
@@ -58,6 +62,9 @@ export const getModelFilePrompt = (
 export const parseJsonFile = (filePath: string): unknown | null => {
   try {
     const fileContents = fs.readFileSync(filePath, "utf8");
+
+    // Parsed JSON starts as `unknown` because files are external input.
+    // The caller must validate the shape before treating it as a tokenizer model.
     return JSON.parse(fileContents);
   } catch {
     return null;
@@ -88,6 +95,7 @@ export const isWordPieceSerializedModel = (
 ): value is WordPieceSerializedModel => {
   if (!isRecord(value)) return false;
 
+  // A runtime guard narrows unknown JSON to the specific saved shape we expect.
   return (
     value["type"] === "wordpiece" &&
     Array.isArray(value["idToToken"]) &&
@@ -102,6 +110,7 @@ export const isBpeSerializedModel = (
 ): value is BpeSerializedModel => {
   if (!isRecord(value)) return false;
 
+  // Each merge entry must stay a two-number tuple: [pairKey, newToken].
   return (
     value["type"] === "bpe" &&
     Array.isArray(value["mergeTable"]) &&
