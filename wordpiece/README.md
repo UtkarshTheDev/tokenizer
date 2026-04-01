@@ -834,6 +834,35 @@ The structure that stores:
 
 The text data used to train the tokenizer.
 
+### Saving and loading a WordPiece model
+
+For WordPiece, the most important thing to save is the learned vocabulary order.
+
+In this project, that means saving:
+
+- `idToToken`
+- `unkToken`
+- small metadata like version and normalization info
+
+You may notice that the saved JSON does **not** store `tokenToId`.
+
+That is intentional.
+
+Why?
+
+Because `idToToken` is the canonical saved vocabulary, and `tokenToId` can be rebuilt from it when the file is loaded.
+
+So the mental model is:
+
+```txt
+train corpus -> build vocabulary -> save idToToken -> load idToToken -> rebuild tokenToId
+```
+
+This is a useful design pattern to learn:
+
+- save the minimum canonical data
+- rebuild fast lookup structures at runtime
+
 ---
 
 ## Final Mental Model

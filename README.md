@@ -209,7 +209,7 @@ The CLI supports both **BPE** and **WordPiece**.
 When you run it, you can use either:
 
 - the numbered menu
-- or direct commands like `bpe`, `wordpiece`, `train`, `encode`, `decode`
+- or direct commands like `bpe`, `wordpiece`, `train`, `encode`, `decode`, `save`, `load`
 
 ### Main actions
 
@@ -220,9 +220,11 @@ When you run it, you can use either:
 | `data` or `3` | Train on `data/data.txt` |
 | `encode` or `4` | Convert text into token IDs |
 | `decode` or `5` | Convert token IDs back into text |
-| `stats` or `6` | Show training stats |
-| `clear` or `7` | Clear the terminal |
-| `exit` or `8` | Exit the CLI |
+| `save` or `6` | Save the currently active tokenizer model to `models/` |
+| `load` or `7` | Load a tokenizer model from `models/` into memory |
+| `stats` or `8` | Show training stats |
+| `clear` | Clear the terminal |
+| `exit` or `quit` | Exit the CLI |
 | `bpe` | Switch directly to BPE |
 | `wordpiece` / `wp` | Switch directly to WordPiece |
 
@@ -269,6 +271,59 @@ That means:
 - if you switch to WordPiece, train WordPiece first
 
 Each tokenizer keeps its own learned state in memory while the CLI session is running.
+
+### Save and load models
+
+The CLI can now save and load both tokenizer families.
+
+- `save` writes the **currently active tokenizer** to the `models/` folder
+- `load` reads a saved tokenizer file back into memory
+- pressing Enter uses the default file name for the active tokenizer:
+  - `models/bpe.json`
+  - `models/wordpiece.json`
+
+One important design choice in this project:
+
+- loading a model does **not** automatically switch the active tokenizer
+- instead, it fills that tokenizer's in-memory slot
+- this means you can keep a BPE model and a WordPiece model loaded at the same time during one CLI session
+
+Example:
+
+```txt
+1. Active tokenizer is WordPiece
+2. Type: load
+3. Load a saved BPE model
+4. BPE becomes available in memory
+5. WordPiece stays active until you switch to BPE yourself
+```
+
+This makes experimentation easier because you do not lose the model that is already loaded for the other tokenizer.
+
+### Save and load command examples
+
+#### Save the active tokenizer
+
+```txt
+1. Train or load a tokenizer first
+2. Type: save
+3. Press Enter to use the default file:
+   - bpe -> models/bpe.json
+   - wordpiece -> models/wordpiece.json
+4. Or type a custom name like:
+   - my-bpe-model
+   - lesson-1-wordpiece.json
+```
+
+#### Load a tokenizer model
+
+```txt
+1. Type: load
+2. Press Enter to load the default file for the active tokenizer
+3. Or type a saved file name from models/
+4. The CLI loads that tokenizer into memory
+5. If it is different from the active tokenizer, the active tokenizer stays unchanged
+```
 
 ---
 

@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { model } from "./types";
 import preTokenize from "./preTokenizer";
 import { decode, encode } from "./tokenizer";
+import {
+  deserializeWordpieceModel,
+  serializeWordpieceModel,
+} from "./serializer";
 
 // These tests are intentionally small and concrete.
 // They are not only checking correctness; they also act as executable examples
@@ -64,5 +68,62 @@ describe("wordpiece round-trip", () => {
     const encoded = encode("playful!", model);
 
     expect(decode(encoded, model)).toBe("[UNK]!");
+  });
+});
+
+describe("wordpiece serialization round-trip", () => {
+  test("preserves important model structure after serialize and deserialize", () => {
+    const serialized = serializeWordpieceModel(model);
+    const loadedModel = deserializeWordpieceModel(serialized);
+
+    expect(loadedModel.unkToken).toBe(model.unkToken);
+    expect(loadedModel.idToToken).toEqual(model.idToToken);
+    expect(loadedModel.idToToken[0]).toBe("[UNK]");
+    expect(loadedModel.tokenToId.get("play")).toBe(model.tokenToId.get("play"));
+    expect(loadedModel.tokenToId.get("##ing")).toBe(
+      model.tokenToId.get("##ing"),
+    );
+  });
+
+  test("preserves encode behavior after serialize and deserialize", () => {
+    const serialized = serializeWordpieceModel(model);
+    const loadedModel = deserializeWordpieceModel(serialized);
+
+    expect(encode("playing, tokenizers!", loadedModel)).toEqual(
+      encode("playing, tokenizers!", model),
+    );
+    expect(encode("playful!", loadedModel)).toEqual(
+      encode("playful!", model),
+    );
+  });
+
+  test("preserves decode behavior after serialize and deserialize", () => {
+    const serialized = serializeWordpieceModel(model);
+    const loadedModel = deserializeWordpieceModel(serialized);
+    const tokenIds = [1, 2, 8, 10, 13, 11, 7];
+
+    expect(decode(tokenIds, loadedModel)).toBe(decode(tokenIds, model));
+  });
+
+  test("rejects duplicate tokens in idToToken during deserialize", () => {
+    const serialized = serializeWordpieceModel(model);
+
+    expect(() =>
+      deserializeWordpieceModel({
+        ...serialized,
+        idToToken: ["[UNK]", "play", "play"],
+      }),
+    ).toThrow("idToToken");
+  });
+
+  test("rejects unkToken values that are missing from idToToken", () => {
+    const serialized = serializeWordpieceModel(model);
+
+    expect(() =>
+      deserializeWordpieceModel({
+        ...serialized,
+        unkToken: "[MISSING]",
+      }),
+    ).toThrow("unkToken");
   });
 });

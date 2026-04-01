@@ -555,6 +555,31 @@ const decoded = decode(encoded, mergeTable);
 console.log(decoded);
 ```
 
+### Saving and loading a BPE model
+
+For this BPE implementation, the important thing to save is the **merge table**.
+
+That is the learned artifact of training.
+
+When you save a BPE model in this project, the JSON file stores:
+
+- the tokenizer type (`"bpe"`)
+- metadata like version and base vocabulary size
+- the learned `mergeTable`
+
+When you load the file again, the runtime BPE tokenizer simply reuses that merge table for:
+
+- `encode()`
+- `decode()`
+
+So the mental model is:
+
+```txt
+train text -> learn mergeTable -> save mergeTable -> load mergeTable -> reuse it later
+```
+
+Because this BPE starts from raw UTF-8 bytes, the base vocabulary size is fixed at `256`.
+
 ---
 
 ## Project Structure

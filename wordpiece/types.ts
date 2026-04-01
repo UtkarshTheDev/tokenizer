@@ -56,3 +56,19 @@ export const model: WordPieceModel = {
   idToToken,
   unkToken: "[UNK]",
 };
+
+interface NormalizationConfig {
+  lowercase: boolean;
+}
+
+export interface WordPieceSerializedModel {
+  type: "wordpiece";
+  description?: string;
+  version: number;
+  normalization?: NormalizationConfig;
+  continuationPrefix: string;
+  unkToken: string;
+  vocabSize?: number;
+  idToToken: string[];
+  notes?: string;
+}
