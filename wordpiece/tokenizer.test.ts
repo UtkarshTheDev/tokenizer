@@ -104,4 +104,26 @@ describe("wordpiece serialization round-trip", () => {
 
     expect(decode(tokenIds, loadedModel)).toBe(decode(tokenIds, model));
   });
+
+  test("rejects duplicate tokens in idToToken during deserialize", () => {
+    const serialized = serializeWordpieceModel(model);
+
+    expect(() =>
+      deserializeWordpieceModel({
+        ...serialized,
+        idToToken: ["[UNK]", "play", "play"],
+      }),
+    ).toThrow("idToToken");
+  });
+
+  test("rejects unkToken values that are missing from idToToken", () => {
+    const serialized = serializeWordpieceModel(model);
+
+    expect(() =>
+      deserializeWordpieceModel({
+        ...serialized,
+        unkToken: "[MISSING]",
+      }),
+    ).toThrow("unkToken");
+  });
 });

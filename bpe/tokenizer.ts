@@ -121,9 +121,9 @@ function replacePair(
  * @returns An object containing the learned merge table and the final compressed tokens
  */
 export function train(text: string, targetVocabSize: number): TrainingResult {
-  if (targetVocabSize <= BaseVocabSize) {
+  if (targetVocabSize < BaseVocabSize) {
     throw new Error(
-      "Target vocabulary size must be greater than BaseVocabSize (base UTF-8 size).",
+      "Target vocabulary size must be at least BaseVocabSize (base UTF-8 size).",
     );
   }
 

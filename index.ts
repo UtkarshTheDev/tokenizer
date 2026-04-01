@@ -149,7 +149,6 @@ const handleTrain = async (text: string) => {
     const finalTokens = tokens.length;
 
     currentMergeTable = mergeTable;
-    currentWordPieceModel = null;
     currentVocabSize = 256 + mergeTable.length;
     currentTrainingStats = {
       tokenizer: "bpe",
@@ -176,7 +175,6 @@ const handleTrain = async (text: string) => {
   const finalTokens = encoded.length;
 
   currentWordPieceModel = model;
-  currentMergeTable = null;
   currentVocabSize = model.idToToken.length;
   currentTrainingStats = {
     tokenizer: "wordpiece",

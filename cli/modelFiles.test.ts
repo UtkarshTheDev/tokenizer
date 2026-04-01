@@ -15,7 +15,9 @@ describe("model file helpers", () => {
 
   it("rejects path traversal and nested paths", () => {
     expect(() => buildModelLocation("wordpiece", "../secret")).toThrow();
+    expect(() => buildModelLocation("wordpiece", "..\\secret")).toThrow();
     expect(() => buildModelLocation("wordpiece", "nested/model")).toThrow();
+    expect(() => buildModelLocation("wordpiece", "nested\\model")).toThrow();
   });
 
   it("parses supported model types from JSON-like values", () => {

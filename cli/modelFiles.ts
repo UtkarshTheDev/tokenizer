@@ -118,7 +118,7 @@ export const isBpeSerializedModel = (
       (item) =>
         Array.isArray(item) &&
         item.length === 2 &&
-        item.every((num) => typeof num === "number"),
+        item.every((num) => Number.isSafeInteger(num) && num >= 0),
     ) &&
     value["baseVocabSize"] === 256 &&
     typeof value["version"] === "number"

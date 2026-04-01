@@ -29,6 +29,17 @@ export const deserializeWordpieceModel = (
   if (wordPieceJSON.continuationPrefix !== "##")
     throw new Error("Invalid Continuation Prefix");
 
+  const uniqueTokens = new Set(wordPieceJSON.idToToken);
+  if (uniqueTokens.size !== wordPieceJSON.idToToken.length) {
+    throw new Error("Invalid idToToken: duplicate token values are not allowed.");
+  }
+
+  if (!wordPieceJSON.idToToken.includes(wordPieceJSON.unkToken)) {
+    throw new Error(
+      "Invalid unkToken: unkToken must exist in idToToken before loading.",
+    );
+  }
+
   // When loading, we reconstruct the fast token -> id lookup map that encode()
   // needs at runtime. That map is convenient in memory, but not necessary in JSON.
   const tokenToId = reverseIdToToken(wordPieceJSON.idToToken);
