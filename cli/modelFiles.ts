@@ -76,6 +76,12 @@ export const writeJsonFile = (
   location: string,
   data: unknown,
 ): string => {
+  if (path.isAbsolute(location)) {
+    throw new Error(
+      "Model file location must be relative to the project models directory.",
+    );
+  }
+
   const filePath = path.resolve(baseDir, location);
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");

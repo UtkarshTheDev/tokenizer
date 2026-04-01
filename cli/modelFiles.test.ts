@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { buildModelLocation, parseModelType } from "./modelFiles";
+import { buildModelLocation, parseModelType, writeJsonFile } from "./modelFiles";
 
 describe("model file helpers", () => {
   it("uses the active tokenizer default file on empty input", () => {
@@ -25,5 +25,11 @@ describe("model file helpers", () => {
     expect(parseModelType({ type: "wordpiece" })).toBe("wordpiece");
     expect(parseModelType({ type: "other" })).toBeUndefined();
     expect(parseModelType(null)).toBeUndefined();
+  });
+
+  it("rejects absolute paths when writing JSON files", () => {
+    expect(() =>
+      writeJsonFile("/tmp", "/tmp/escape.json", { ok: true }),
+    ).toThrow("relative");
   });
 });
