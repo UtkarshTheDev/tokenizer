@@ -1,8 +1,4 @@
-import {
-  isBpeSerializedModel,
-  readJsonFile,
-  writeJsonFile,
-} from "./modelFiles";
+import { isBpeSerializedModel, writeJsonFile } from "./modelFiles";
 import {
   deserializeWordpieceModel,
   serializeWordpieceModel,
@@ -30,33 +26,20 @@ export const saveBpeModel = (
   writeJsonFile(baseDir, location, content);
 };
 
-export const loadWordPieceModel = (
-  baseDir: string,
-  location: string,
-): WordPieceModel => {
-  const parsed = readJsonFile(baseDir, location);
-
-  if (parsed === null) {
-    throw new Error("Failed to load or parse the JSON file.");
+export const loadBpeModel = (content: unknown): MergeTable => {
+  if (!isBpeSerializedModel(content)) {
+    throw new Error(
+      "Parsed JSON is not a valid Byte Pair Encoding (BPE) model.",
+    );
   }
 
-  if (!isWordPieceSerializedModel(parsed)) {
-    throw new Error("Parsed JSON is not a valid WordPiece model.");
-  }
-
-  return deserializeWordpieceModel(parsed);
+  return deserializeBpeModel(content);
 };
 
-export const loadBpeModel = (baseDir: string, location: string): MergeTable => {
-  const parsed = readJsonFile(baseDir, location);
-
-  if (parsed === null) {
-    throw new Error("Failed to load or parse the JSON file.");
-  }
-
-  if (!isBpeSerializedModel(parsed)) {
+export const loadWordPieceModel = (content: unknown): WordPieceModel => {
+  if (!isWordPieceSerializedModel(content)) {
     throw new Error("Parsed JSON is not a valid WordPiece model.");
   }
 
-  return deserializeBpeModel(parsed);
+  return deserializeWordpieceModel(content);
 };
