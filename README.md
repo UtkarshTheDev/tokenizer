@@ -270,6 +270,34 @@ That means:
 
 Each tokenizer keeps its own learned state in memory while the CLI session is running.
 
+### Save and load models
+
+The CLI can now save and load both tokenizer families.
+
+- `save` writes the **currently active tokenizer** to the `models/` folder
+- `load` reads a saved tokenizer file back into memory
+- pressing Enter uses the default file name for the active tokenizer:
+  - `models/bpe.json`
+  - `models/wordpiece.json`
+
+One important design choice in this project:
+
+- loading a model does **not** automatically switch the active tokenizer
+- instead, it fills that tokenizer's in-memory slot
+- this means you can keep a BPE model and a WordPiece model loaded at the same time during one CLI session
+
+Example:
+
+```txt
+1. Active tokenizer is WordPiece
+2. Type: load
+3. Load a saved BPE model
+4. BPE becomes available in memory
+5. WordPiece stays active until you switch to BPE yourself
+```
+
+This makes experimentation easier because you do not lose the model that is already loaded for the other tokenizer.
+
 ---
 
 ## Programmatic Usage
