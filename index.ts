@@ -98,6 +98,9 @@ const printMenu = () => {
     `\n🔤 Tokenizer CLI (Current: ${currentTokenizer.toUpperCase()})`,
   );
   console.log(`================================`);
+  console.log(
+    `Loaded models -> BPE: ${currentMergeTable === null ? "empty" : "ready"}, WordPiece: ${currentWordPieceModel === null ? "empty" : "ready"}`,
+  );
   console.log(`1. Select tokenizer (BPE / WordPiece)`);
   console.log(`2. Train on text (type directly)`);
   console.log(`3. Train on file (data/data.txt)`);
@@ -115,9 +118,6 @@ const printMenu = () => {
 
 const askModelLocation = async (action: ModelFileAction): Promise<string> => {
   const raw = await rl.question(getModelFilePrompt(currentTokenizer, action));
-  if (action === "load") {
-    return buildModelLocation(null, raw);
-  }
   return buildModelLocation(currentTokenizer, raw);
 };
 
@@ -400,7 +400,13 @@ async function main() {
             currentVocabSize = loadedModel.idToToken.length;
           }
           currentTrainingStats = null;
-          console.log(`Loaded ${currentTokenizer} model from ${location}`);
+          if (type === currentTokenizer) {
+            console.log(`Loaded ${type.toUpperCase()} model from ${location}`);
+          } else {
+            console.log(
+              `Loaded ${type.toUpperCase()} model from ${location}. Active tokenizer is still ${currentTokenizer.toUpperCase()}.`,
+            );
+          }
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Failed to load model.";

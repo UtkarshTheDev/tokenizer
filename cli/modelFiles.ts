@@ -13,15 +13,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 };
 
 export const buildModelLocation = (
-  tokenizer: TokenizerKind | null,
+  tokenizer: TokenizerKind,
   rawInput: string,
 ): string => {
-  if (tokenizer === null) {
-    throw new Error(
-      "Enter the file name to load tokenizer. Empty file names are not allowed.",
-    );
-  }
-
   let fileName = rawInput.trim();
 
   if (fileName === "") {
@@ -56,7 +50,7 @@ export const getModelFilePrompt = (
   action: ModelFileAction,
 ): string => {
   if (action === "load") {
-    return `Enter the filename of tokenizer to ${action} (inside: models/): `;
+    return `Enter the filename to load from models/ (default: ${tokenizer}.json): `;
   }
   return `Enter the filename for ${tokenizer} to ${action} (default: ${tokenizer}.json): `;
 };
