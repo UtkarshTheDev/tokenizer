@@ -16,7 +16,13 @@ import {
   saveBpeModel,
   saveWordPieceModel,
 } from "./cli/modelPersistence";
-import { train, encode, decode, type MergeTable } from "./bpe/tokenizer";
+import {
+  train,
+  encode,
+  decode,
+  type MergeTable,
+  BaseVocabSize,
+} from "./bpe/tokenizer";
 import {
   train as trainWordPiece,
   encode as encodeWordPiece,
@@ -109,6 +115,9 @@ const printMenu = () => {
 
 const askModelLocation = async (action: ModelFileAction): Promise<string> => {
   const raw = await rl.question(getModelFilePrompt(currentTokenizer, action));
+  if (action === "load") {
+    return buildModelLocation(null, raw);
+  }
   return buildModelLocation(currentTokenizer, raw);
 };
 
@@ -384,7 +393,7 @@ async function main() {
           if (type === "bpe") {
             const loadedModel = loadBpeModel(parse);
             currentMergeTable = loadedModel;
-            currentVocabSize = loadedModel.length;
+            currentVocabSize = BaseVocabSize + loadedModel.length;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
             currentWordPieceModel = loadedModel;
