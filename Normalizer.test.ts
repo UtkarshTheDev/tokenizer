@@ -39,6 +39,36 @@ describe("normalizeText", () => {
     const composed = "caf\u00E9";
     const decomposed = "cafe\u0301";
 
-    expect(normalizeText(composed, config)).toBe(normalizeText(decomposed, config));
+    expect(normalizeText(composed, config)).toBe(
+      normalizeText(decomposed, config),
+    );
+  });
+
+  test("can strip accents when the option is enabled", () => {
+    const config: NormalizationConfig = {
+      unicodeForm: "NFC",
+      stripAccents: true,
+      lowercase: false,
+      collapseWhitespace: false,
+      trimWhitespace: false,
+    };
+
+    expect(normalizeText("café naïve résumé", config)).toBe(
+      "cafe naive resume",
+    );
+  });
+
+  test("keeps accents when stripAccents is disabled", () => {
+    const config: NormalizationConfig = {
+      unicodeForm: "NFC",
+      stripAccents: false,
+      lowercase: false,
+      collapseWhitespace: false,
+      trimWhitespace: false,
+    };
+
+    expect(normalizeText("café naïve résumé", config)).toBe(
+      "café naïve résumé",
+    );
   });
 });

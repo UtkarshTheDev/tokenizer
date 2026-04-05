@@ -123,6 +123,7 @@ function replacePair(
  *
  * @param text - The raw text to train on
  * @param targetVocabSize - The desired total vocabulary size (must be >= BaseVocabSize)
+ * @param normalizationConfig - Shared text cleanup rules applied before training starts
  * @returns An object containing the learned merge table and the final compressed tokens
  */
 export function train(
@@ -130,6 +131,8 @@ export function train(
   targetVocabSize: number,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): TrainingResult {
+  // BPE learns from normalized text so later encode() calls can see the same
+  // cleaned input shape that training saw.
   text = normalizeText(text, normalizationConfig);
   if (targetVocabSize < BaseVocabSize) {
     throw new Error(
@@ -170,6 +173,7 @@ export function train(
  *
  * @param text - The input string to encode
  * @param mergeTable - The learned merge rules from the `train` step
+ * @param normalizationConfig - Shared text cleanup rules applied before encoding
  * @returns Array of token IDs
  */
 export function encode(
@@ -177,6 +181,8 @@ export function encode(
   mergeTable: MergeTable,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): number[] {
+  // Encode uses the same normalization layer as train() so both phases see
+  // consistent text.
   text = normalizeText(text, normalizationConfig);
   // Start with raw UTF-8 bytes
   let tokens = Array.from(Buffer.from(text, "utf-8"));

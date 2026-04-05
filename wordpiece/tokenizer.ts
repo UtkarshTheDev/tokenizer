@@ -79,19 +79,20 @@ const encodeWord = (word: string, model: WordPieceModel): string[] => {
  * Encode a full text string into token IDs.
  *
  * Flow:
- * 1. lowercase the text
+ * 1. normalize the text
  * 2. pre-tokenize it into chunks like words and punctuation
  * 3. encode each word chunk with WordPiece
  * 4. convert the token strings into numeric IDs
  *
- * This implementation lowercases input because the current learning model and
- * training pipeline are built around lowercase tokens.
+ * The normalization step is shared with training so the WordPiece vocabulary
+ * sees the same cleaned text form during both learning and inference.
  */
 export const encode = (
   text: string,
   model: WordPieceModel,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): number[] => {
+  // WordPiece matching is string-based, so normalization consistency matters a lot.
   text = normalizeText(text, normalizationConfig);
   const chunks = preTokenize(text);
   const tokens: string[] = [];
@@ -168,6 +169,7 @@ export const decode = (tokens: number[], model: WordPieceModel): string => {
  *
  * This top-level function stays intentionally small. It wires together the
  * training helpers in the same order you would explain them to a beginner:
+ * - normalize the corpus
  * - count words
  * - grow a vocabulary
  * - turn that vocabulary into a model
@@ -177,6 +179,7 @@ export const train = (
   size: number,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): WordPieceModel => {
+  // The same normalization rules should be used for both training and encode().
   corpus = normalizeText(corpus, normalizationConfig);
   const freq = wordFreq(corpus);
 
