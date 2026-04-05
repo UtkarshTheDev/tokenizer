@@ -6,6 +6,11 @@ import {
   trainVocabulary,
   wordFreq,
 } from "./trainHelpers";
+import {
+  DEFAULT_NORMALIZATION_CONFIG,
+  normalizeText,
+  type NormalizationConfig,
+} from "../Normalizer";
 
 /**
  * WordPiece Tokenizer
@@ -82,7 +87,12 @@ const encodeWord = (word: string, model: WordPieceModel): string[] => {
  * This implementation lowercases input because the current learning model and
  * training pipeline are built around lowercase tokens.
  */
-export const encode = (text: string, model: WordPieceModel): number[] => {
+export const encode = (
+  text: string,
+  model: WordPieceModel,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): number[] => {
+  text = normalizeText(text, normalizationConfig);
   const normalizedText = text.toLowerCase();
   const chunks = preTokenize(normalizedText);
   const tokens: string[] = [];
@@ -163,7 +173,12 @@ export const decode = (tokens: number[], model: WordPieceModel): string => {
  * - grow a vocabulary
  * - turn that vocabulary into a model
  */
-export const train = (corpus: string, size: number): WordPieceModel => {
+export const train = (
+  corpus: string,
+  size: number,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): WordPieceModel => {
+  corpus = normalizeText(corpus, normalizationConfig);
   const freq = wordFreq(corpus);
 
   const vocab = trainVocabulary(freq, size);
