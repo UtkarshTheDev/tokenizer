@@ -74,7 +74,8 @@ describe("wordpiece round-trip", () => {
 describe("wordpiece serialization round-trip", () => {
   test("preserves important model structure after serialize and deserialize", () => {
     const serialized = serializeWordpieceModel(model);
-    const loadedModel = deserializeWordpieceModel(serialized);
+    const loaded = deserializeWordpieceModel(serialized);
+    const loadedModel = loaded.model;
 
     expect(loadedModel.unkToken).toBe(model.unkToken);
     expect(loadedModel.idToToken).toEqual(model.idToToken);
@@ -83,11 +84,14 @@ describe("wordpiece serialization round-trip", () => {
     expect(loadedModel.tokenToId.get("##ing")).toBe(
       model.tokenToId.get("##ing"),
     );
+    expect(loaded.normalizationConfig).toEqual(
+      serialized.normalization ?? { lowercase: true },
+    );
   });
 
   test("preserves encode behavior after serialize and deserialize", () => {
     const serialized = serializeWordpieceModel(model);
-    const loadedModel = deserializeWordpieceModel(serialized);
+    const loadedModel = deserializeWordpieceModel(serialized).model;
 
     expect(encode("playing, tokenizers!", loadedModel)).toEqual(
       encode("playing, tokenizers!", model),
@@ -99,7 +103,7 @@ describe("wordpiece serialization round-trip", () => {
 
   test("preserves decode behavior after serialize and deserialize", () => {
     const serialized = serializeWordpieceModel(model);
-    const loadedModel = deserializeWordpieceModel(serialized);
+    const loadedModel = deserializeWordpieceModel(serialized).model;
     const tokenIds = [1, 2, 8, 10, 13, 11, 7];
 
     expect(decode(tokenIds, loadedModel)).toBe(decode(tokenIds, model));

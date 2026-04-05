@@ -93,8 +93,7 @@ export const encode = (
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): number[] => {
   text = normalizeText(text, normalizationConfig);
-  const normalizedText = text.toLowerCase();
-  const chunks = preTokenize(normalizedText);
+  const chunks = preTokenize(text);
   const tokens: string[] = [];
   const tokensID: number[] = [];
   for (const chunk of chunks) {

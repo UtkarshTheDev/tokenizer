@@ -8,7 +8,10 @@ describe("bpe serialization round-trip", () => {
     const serialized = serializeBpeModel(mergeTable);
     const loaded = deserializeBpeModel(serialized);
 
-    expect(loaded).toEqual(mergeTable);
+    expect(loaded.mergeTable).toEqual(mergeTable);
+    expect(loaded.normalizationConfig).toEqual(
+      serialized.normalization ?? { lowercase: true },
+    );
   });
 
   it("preserves encode and decode behavior after round-trip", () => {
@@ -17,7 +20,9 @@ describe("bpe serialization round-trip", () => {
     const loaded = deserializeBpeModel(serialized);
     const text = "banana bandana";
 
-    expect(encode(text, loaded)).toEqual(encode(text, mergeTable));
-    expect(decode(encode(text, loaded), loaded)).toBe(text);
+    expect(encode(text, loaded.mergeTable)).toEqual(encode(text, mergeTable));
+    expect(decode(encode(text, loaded.mergeTable), loaded.mergeTable)).toBe(
+      text,
+    );
   });
 });
