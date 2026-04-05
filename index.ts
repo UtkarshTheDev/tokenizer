@@ -29,7 +29,7 @@ import {
   decode as decodeWordPiece,
 } from "./wordpiece/tokenizer";
 import type { WordPieceModel } from "./wordpiece/types";
-import { DEFAULT_NORMALIZATION_CONFIG, normalizeText } from "./Normalizer";
+import { DEFAULT_NORMALIZATION_CONFIG } from "./Normalizer";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -135,7 +135,7 @@ const handleTrain = async (text: string) => {
   );
 
   let vocabSize = parseInt(vocabStr, 10);
-  if (isNaN(vocabSize)) vocabSize = defaultVocabSize;
+  if (Number.isNaN(vocabSize)) vocabSize = defaultVocabSize;
   if (vocabSize < minVocabSize) vocabSize = minVocabSize;
 
   console.log(
@@ -297,7 +297,7 @@ async function main() {
           const tokens = cleanStr
             .split(",")
             .map((s) => parseInt(s.trim(), 10))
-            .filter((n) => !isNaN(n));
+            .filter((n) => !Number.isNaN(n));
 
           const start = performance.now();
           const text =

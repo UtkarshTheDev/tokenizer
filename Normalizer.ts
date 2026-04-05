@@ -1,9 +1,11 @@
 export interface NormalizationConfig {
   lowercase: boolean;
+  collapseWhitespace: boolean;
 }
 
 export const DEFAULT_NORMALIZATION_CONFIG: NormalizationConfig = {
   lowercase: true,
+  collapseWhitespace: true,
 };
 
 export const normalizeText = (
@@ -12,6 +14,9 @@ export const normalizeText = (
 ): string => {
   if (config.lowercase === true) {
     text = text.toLowerCase();
+  }
+  if (config.collapseWhitespace === true) {
+    text = text.replace(/\s+/g, " ").trim();
   }
   return text;
 };
