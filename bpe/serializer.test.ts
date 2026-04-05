@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
 import { decode, encode, train } from "./tokenizer";
 import { deserializeBpeModel, serializeBpeModel } from "./serializer";
 
@@ -10,7 +11,7 @@ describe("bpe serialization round-trip", () => {
 
     expect(loaded.mergeTable).toEqual(mergeTable);
     expect(loaded.normalizationConfig).toEqual(
-      serialized.normalization ?? { lowercase: true },
+      serialized.normalization ?? DEFAULT_NORMALIZATION_CONFIG,
     );
   });
 

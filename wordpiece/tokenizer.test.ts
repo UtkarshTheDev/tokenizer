@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
 import { model } from "./types";
 import preTokenize from "./preTokenizer";
 import { decode, encode } from "./tokenizer";
@@ -85,7 +86,7 @@ describe("wordpiece serialization round-trip", () => {
       model.tokenToId.get("##ing"),
     );
     expect(loaded.normalizationConfig).toEqual(
-      serialized.normalization ?? { lowercase: true },
+      serialized.normalization ?? DEFAULT_NORMALIZATION_CONFIG,
     );
   });
 
