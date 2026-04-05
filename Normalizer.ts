@@ -1,14 +1,16 @@
 export interface NormalizationConfig {
   unicodeForm?: "NFC" | "NFKC";
+  stripAccents?: boolean;
   lowercase?: boolean;
   collapseWhitespace?: boolean;
   trimWhitespace?: boolean;
 }
 
 export const DEFAULT_NORMALIZATION_CONFIG: NormalizationConfig = {
+  unicodeForm: "NFC",
+  stripAccents: false,
   lowercase: true,
   collapseWhitespace: true,
-  unicodeForm: "NFC",
   trimWhitespace: true,
 };
 
@@ -18,6 +20,9 @@ export const normalizeText = (
 ): string => {
   if (config.unicodeForm) {
     text = text.normalize(config.unicodeForm);
+  }
+  if (config.stripAccents) {
+    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
   if (config.lowercase === true) {
     text = text.toLowerCase();
