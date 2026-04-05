@@ -16,6 +16,11 @@
  *    all occurrences of the pair with the new ID.
  */
 
+import {
+  DEFAULT_NORMALIZATION_CONFIG,
+  normalizeText,
+  type NormalizationConfig,
+} from "../Normalizer";
 import preTokenize from "./preTokenizer";
 
 // A tuple representing [pairKey, new_token_id]
@@ -120,7 +125,12 @@ function replacePair(
  * @param targetVocabSize - The desired total vocabulary size (must be >= BaseVocabSize)
  * @returns An object containing the learned merge table and the final compressed tokens
  */
-export function train(text: string, targetVocabSize: number): TrainingResult {
+export function train(
+  text: string,
+  targetVocabSize: number,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): TrainingResult {
+  text = normalizeText(text, normalizationConfig);
   if (targetVocabSize < BaseVocabSize) {
     throw new Error(
       "Target vocabulary size must be at least BaseVocabSize (base UTF-8 size).",
@@ -162,7 +172,12 @@ export function train(text: string, targetVocabSize: number): TrainingResult {
  * @param mergeTable - The learned merge rules from the `train` step
  * @returns Array of token IDs
  */
-export function encode(text: string, mergeTable: MergeTable): number[] {
+export function encode(
+  text: string,
+  mergeTable: MergeTable,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): number[] {
+  text = normalizeText(text, normalizationConfig);
   // Start with raw UTF-8 bytes
   let tokens = Array.from(Buffer.from(text, "utf-8"));
 
