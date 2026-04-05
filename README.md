@@ -331,6 +331,47 @@ This makes experimentation easier because you do not lose the model that is alre
 
 You can also use the tokenizers directly in code.
 
+### Shared normalization layer
+
+Before either tokenizer starts matching tokens, this project can normalize the
+input text into a more predictable form.
+
+The shared normalization pipeline currently supports:
+
+- Unicode normalization with `NFC` or `NFKC`
+- optional accent stripping
+- lowercasing
+- collapsing repeated whitespace
+- trimming leading and trailing whitespace
+
+This means the full text flow is now:
+
+```txt
+raw text -> normalize -> pre-tokenize -> tokenize
+```
+
+Why this matters:
+
+- training and encode can now see the same cleaned text form
+- equivalent text can behave more consistently
+- the tokenizer code is closer to a real preprocessing pipeline
+
+Example:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "café world"
+```
+
+And if accent stripping is enabled:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "cafe world"
+```
+
 ### BPE usage
 
 ```ts
