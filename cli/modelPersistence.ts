@@ -7,6 +7,7 @@ import type { WordPieceModel } from "../wordpiece/types";
 import { isWordPieceSerializedModel } from "./modelFiles";
 import { deserializeBpeModel, serializeBpeModel } from "../bpe/serializer";
 import type { MergeTable } from "../bpe/tokenizer";
+import type { NormalizationConfig } from "../Normalizer";
 
 export const saveWordPieceModel = (
   baseDir: string,
@@ -40,7 +41,9 @@ export const loadBpeModel = (content: unknown): MergeTable => {
   return deserializeBpeModel(content);
 };
 
-export const loadWordPieceModel = (content: unknown): WordPieceModel => {
+export const loadWordPieceModel = (
+  content: unknown,
+): { model: WordPieceModel; normalizationConfig: NormalizationConfig } => {
   if (!isWordPieceSerializedModel(content)) {
     throw new Error("Parsed JSON is not a valid WordPiece model.");
   }
