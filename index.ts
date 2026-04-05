@@ -372,7 +372,12 @@ async function main() {
               console.log("❌ Train or load a WordPiece model first.");
               break;
             }
-            saveWordPieceModel(__dirname, location, currentWordPieceModel);
+            saveWordPieceModel(
+              __dirname,
+              location,
+              currentWordPieceModel,
+              normalizationConfig,
+            );
           } else if (currentTokenizer === "bpe") {
             if (currentMergeTable === null) {
               console.log(
@@ -380,7 +385,12 @@ async function main() {
               );
               break;
             }
-            saveBpeModel(__dirname, location, currentMergeTable);
+            saveBpeModel(
+              __dirname,
+              location,
+              currentMergeTable,
+              normalizationConfig,
+            );
           }
           console.log(
             `Saved ${currentTokenizer} tokenizer model to ${location}`,

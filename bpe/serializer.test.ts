@@ -5,8 +5,16 @@ import { deserializeBpeModel, serializeBpeModel } from "./serializer";
 
 describe("bpe serialization round-trip", () => {
   it("preserves merge table structure after serialize and deserialize", () => {
-    const { mergeTable } = train("banana bandana banana", 270);
-    const serialized = serializeBpeModel(mergeTable);
+    const normalizationConfig = {
+      ...DEFAULT_NORMALIZATION_CONFIG,
+      trimWhitespace: false,
+    };
+    const { mergeTable } = train(
+      "banana bandana banana",
+      270,
+      normalizationConfig,
+    );
+    const serialized = serializeBpeModel(mergeTable, normalizationConfig);
     const loaded = deserializeBpeModel(serialized);
 
     expect(loaded.mergeTable).toEqual(mergeTable);
@@ -16,13 +24,28 @@ describe("bpe serialization round-trip", () => {
   });
 
   it("preserves encode and decode behavior after round-trip", () => {
-    const { mergeTable } = train("banana bandana banana", 270);
-    const serialized = serializeBpeModel(mergeTable);
+    const normalizationConfig = {
+      ...DEFAULT_NORMALIZATION_CONFIG,
+      collapseWhitespace: false,
+    };
+    const { mergeTable } = train(
+      "banana bandana banana",
+      270,
+      normalizationConfig,
+    );
+    const serialized = serializeBpeModel(mergeTable, normalizationConfig);
     const loaded = deserializeBpeModel(serialized);
     const text = "banana bandana";
 
-    expect(encode(text, loaded.mergeTable)).toEqual(encode(text, mergeTable));
-    expect(decode(encode(text, loaded.mergeTable), loaded.mergeTable)).toBe(
+    expect(
+      encode(text, loaded.mergeTable, loaded.normalizationConfig),
+    ).toEqual(encode(text, mergeTable, normalizationConfig));
+    expect(
+      decode(
+        encode(text, loaded.mergeTable, loaded.normalizationConfig),
+        loaded.mergeTable,
+      ),
+    ).toBe(
       text,
     );
   });

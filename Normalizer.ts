@@ -43,7 +43,11 @@ export const normalizeText = (
   if (config.stripAccents) {
     // NFD decomposes characters like "é" into "e" + a combining accent mark.
     // We then remove the combining marks to keep only the base characters.
-    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const unicodeForm = config.unicodeForm ?? DEFAULT_NORMALIZATION_CONFIG.unicodeForm;
+    text = text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .normalize(unicodeForm);
   }
   if (config.lowercase === true) {
     text = text.toLowerCase();

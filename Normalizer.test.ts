@@ -44,6 +44,20 @@ describe("normalizeText", () => {
     );
   });
 
+  test("normalizes compatibility characters with NFKC", () => {
+    const config: NormalizationConfig = {
+      unicodeForm: "NFKC",
+      stripAccents: false,
+      lowercase: true,
+      collapseWhitespace: false,
+      trimWhitespace: false,
+    };
+
+    expect(normalizeText("\uFF28\uFF25\uFF2C\uFF2C\uFF2F", config)).toBe(
+      "hello",
+    );
+  });
+
   test("can strip accents when the option is enabled", () => {
     const config: NormalizationConfig = {
       unicodeForm: "NFC",

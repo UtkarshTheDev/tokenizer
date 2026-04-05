@@ -20,6 +20,7 @@ export interface BpeSerializedModel {
 
 export const serializeBpeModel = (
   mergeTable: MergeTable,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): BpeSerializedModel => {
   const mergeCount = mergeTable.length;
 
@@ -33,7 +34,7 @@ export const serializeBpeModel = (
     mergeCount: mergeCount,
     trainedVocabSize: BaseVocabSize + mergeCount,
     mergeTable: mergeTable,
-    normalization: DEFAULT_NORMALIZATION_CONFIG,
+    normalization: normalizationConfig,
   };
 
   return bpeJSON;

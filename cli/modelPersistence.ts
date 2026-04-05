@@ -13,10 +13,11 @@ export const saveWordPieceModel = (
   baseDir: string,
   location: string,
   model: WordPieceModel,
+  normalizationConfig: NormalizationConfig,
 ): void => {
   // Runtime models often contain Maps or derived lookups. The serializer turns
   // that in-memory shape into plain JSON data that can be written to disk.
-  const content = serializeWordpieceModel(model);
+  const content = serializeWordpieceModel(model, normalizationConfig);
   writeJsonFile(baseDir, location, content);
 };
 
@@ -24,8 +25,9 @@ export const saveBpeModel = (
   baseDir: string,
   location: string,
   model: MergeTable,
+  normalizationConfig: NormalizationConfig,
 ): void => {
-  const content = serializeBpeModel(model);
+  const content = serializeBpeModel(model, normalizationConfig);
   writeJsonFile(baseDir, location, content);
 };
 

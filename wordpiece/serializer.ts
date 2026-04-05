@@ -7,6 +7,7 @@ import { type WordPieceModel, type WordPieceSerializedModel } from "./types";
 
 export const serializeWordpieceModel = (
   model: WordPieceModel,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): WordPieceSerializedModel => {
   // We save the vocabulary order (`idToToken`) because it is the canonical
   // source of truth. `tokenToId` can be rebuilt from it later.
@@ -18,7 +19,7 @@ export const serializeWordpieceModel = (
     continuationPrefix: "##",
     unkToken: model.unkToken,
     vocabSize: model.idToToken.length,
-    normalization: { lowercase: true },
+    normalization: normalizationConfig,
   };
 
   return wordPieceJSON;
