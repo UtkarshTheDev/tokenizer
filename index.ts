@@ -128,7 +128,6 @@ const askModelLocation = async (action: ModelFileAction): Promise<string> => {
 };
 
 const handleTrain = async (text: string) => {
-  text = normalizeText(text, normalizationConfig);
   const defaultVocabSize = currentTokenizer === "bpe" ? 320 : 64;
   const minVocabSize = currentTokenizer === "bpe" ? 257 : 1;
   const vocabStr = await rl.question(
@@ -147,7 +146,7 @@ const handleTrain = async (text: string) => {
   const originalBytes = Buffer.from(text, "utf-8").length;
 
   if (currentTokenizer === "bpe") {
-    const { mergeTable, tokens } = train(text, vocabSize);
+    const { mergeTable, tokens } = train(text, vocabSize, normalizationConfig);
     const timeMs = (performance.now() - start).toFixed(2);
     const finalTokens = tokens.length;
 
@@ -172,7 +171,7 @@ const handleTrain = async (text: string) => {
     return;
   }
 
-  const model = trainWordPiece(text, vocabSize);
+  const model = trainWordPiece(text, vocabSize, normalizationConfig);
   const encoded = encodeWordPiece(text, model);
   const timeMs = (performance.now() - start).toFixed(2);
   const finalTokens = encoded.length;
@@ -261,14 +260,17 @@ async function main() {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
-        let text = await rl.question("Enter text to encode: ");
-        text = normalizeText(text);
+        const text = await rl.question("Enter text to encode: ");
 
         const start = performance.now();
         const tokens =
           currentTokenizer === "bpe"
-            ? encode(text, currentMergeTable as MergeTable)
-            : encodeWordPiece(text, currentWordPieceModel as WordPieceModel);
+            ? encode(text, currentMergeTable as MergeTable, normalizationConfig)
+            : encodeWordPiece(
+                text,
+                currentWordPieceModel as WordPieceModel,
+                normalizationConfig,
+              );
         const timeMs = (performance.now() - start).toFixed(3);
 
         console.log(`\nEncoded Tokens: [${tokens.join(", ")}]`);
