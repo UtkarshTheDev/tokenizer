@@ -172,7 +172,7 @@ const handleTrain = async (text: string) => {
   }
 
   const model = trainWordPiece(text, vocabSize, normalizationConfig);
-  const encoded = encodeWordPiece(text, model);
+  const encoded = encodeWordPiece(text, model, normalizationConfig);
   const timeMs = (performance.now() - start).toFixed(2);
   const finalTokens = encoded.length;
 
