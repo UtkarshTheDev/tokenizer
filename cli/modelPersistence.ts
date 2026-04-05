@@ -29,7 +29,9 @@ export const saveBpeModel = (
   writeJsonFile(baseDir, location, content);
 };
 
-export const loadBpeModel = (content: unknown): MergeTable => {
+export const loadBpeModel = (
+  content: unknown,
+): { mergeTable: MergeTable; normalizationConfig: NormalizationConfig } => {
   // Loading is the reverse direction: validate the raw JSON first, then rebuild
   // the runtime model shape the tokenizer functions actually use.
   if (!isBpeSerializedModel(content)) {

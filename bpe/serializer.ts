@@ -1,3 +1,7 @@
+import {
+  DEFAULT_NORMALIZATION_CONFIG,
+  type NormalizationConfig,
+} from "../Normalizer";
 import { BaseVocabSize, type MergeTable } from "./tokenizer";
 
 // The saved BPE file stores the learned merge table plus a little metadata that
@@ -8,6 +12,7 @@ export interface BpeSerializedModel {
   version: number;
   baseVocabSize: number;
   mergeCount?: number;
+  normalization?: NormalizationConfig;
   trainedVocabSize?: number;
   mergeTable: MergeTable;
   notes?: string;
@@ -28,6 +33,7 @@ export const serializeBpeModel = (
     mergeCount: mergeCount,
     trainedVocabSize: BaseVocabSize + mergeCount,
     mergeTable: mergeTable,
+    normalization: DEFAULT_NORMALIZATION_CONFIG,
   };
 
   return bpeJSON;
@@ -35,12 +41,18 @@ export const serializeBpeModel = (
 
 export const deserializeBpeModel = (
   bpeJSON: BpeSerializedModel,
-): MergeTable => {
+): { mergeTable: MergeTable; normalizationConfig: NormalizationConfig } => {
   if (bpeJSON.type !== "bpe") {
     throw new Error(`Invalid Model Type: ${bpeJSON.type}`);
   }
-
+  let normalizationConfig = bpeJSON.normalization;
+  if (normalizationConfig === undefined) {
+    normalizationConfig = DEFAULT_NORMALIZATION_CONFIG;
+  }
   // BPE runtime code only needs the merge table. The extra JSON metadata is
   // useful for inspection, but encode/decode replay the learned merges directly.
-  return bpeJSON.mergeTable;
+  return {
+    mergeTable: bpeJSON.mergeTable,
+    normalizationConfig: normalizationConfig,
+  };
 };

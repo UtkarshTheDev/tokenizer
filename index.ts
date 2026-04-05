@@ -404,8 +404,9 @@ async function main() {
 
           if (type === "bpe") {
             const loadedModel = loadBpeModel(parse);
-            currentMergeTable = loadedModel;
-            currentVocabSize = BaseVocabSize + loadedModel.length;
+            normalizationConfig = loadedModel.normalizationConfig;
+            currentMergeTable = loadedModel.mergeTable;
+            currentVocabSize = BaseVocabSize + loadedModel.mergeTable.length;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
             normalizationConfig = loadedModel.normalizationConfig;
