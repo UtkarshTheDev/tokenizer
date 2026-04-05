@@ -29,6 +29,7 @@ import {
   decode as decodeWordPiece,
 } from "./wordpiece/tokenizer";
 import type { WordPieceModel } from "./wordpiece/types";
+import { DEFAULT_NORMALIZATION_CONFIG, normalizeText } from "./Normalizer";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -41,6 +42,7 @@ let currentMergeTable: MergeTable | null = null;
 let currentWordPieceModel: WordPieceModel | null = null;
 let currentTokenizer: TokenizerKind = "bpe";
 let currentVocabSize = 256;
+let normalizationConfig = DEFAULT_NORMALIZATION_CONFIG;
 let currentTrainingStats: {
   tokenizer: TokenizerKind;
   timeMs: string;
@@ -126,6 +128,7 @@ const askModelLocation = async (action: ModelFileAction): Promise<string> => {
 };
 
 const handleTrain = async (text: string) => {
+  text = normalizeText(text, normalizationConfig);
   const defaultVocabSize = currentTokenizer === "bpe" ? 320 : 64;
   const minVocabSize = currentTokenizer === "bpe" ? 257 : 1;
   const vocabStr = await rl.question(
@@ -258,7 +261,8 @@ async function main() {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
-        const text = await rl.question("Enter text to encode: ");
+        let text = await rl.question("Enter text to encode: ");
+        text = normalizeText(text);
 
         const start = performance.now();
         const tokens =
@@ -404,8 +408,9 @@ async function main() {
             currentVocabSize = BaseVocabSize + loadedModel.length;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
-            currentWordPieceModel = loadedModel;
-            currentVocabSize = loadedModel.idToToken.length;
+            normalizationConfig = loadedModel.normalizationConfig;
+            currentWordPieceModel = loadedModel.model;
+            currentVocabSize = loadedModel.model.idToToken.length;
           }
 
           // Important UX choice: loading a model fills that tokenizer's slot,
