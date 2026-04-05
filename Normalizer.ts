@@ -1,13 +1,15 @@
 export interface NormalizationConfig {
-  lowercase: boolean;
-  collapseWhitespace: boolean;
-  unicodeForm?: "NFC" | "NKFC";
+  unicodeForm?: "NFC" | "NFKC";
+  lowercase?: boolean;
+  collapseWhitespace?: boolean;
+  trimWhitespace?: boolean;
 }
 
 export const DEFAULT_NORMALIZATION_CONFIG: NormalizationConfig = {
   lowercase: true,
   collapseWhitespace: true,
   unicodeForm: "NFC",
+  trimWhitespace: true,
 };
 
 export const normalizeText = (
@@ -21,7 +23,10 @@ export const normalizeText = (
     text = text.toLowerCase();
   }
   if (config.collapseWhitespace === true) {
-    text = text.replace(/\s+/g, " ").trim();
+    text = text.replace(/\s+/g, " ");
+  }
+  if (config.trimWhitespace === true) {
+    text = text.trim();
   }
   return text;
 };
