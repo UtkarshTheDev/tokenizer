@@ -169,12 +169,12 @@ export function train(
 }
 
 /**
- * Encodes a string into an array of BPE tokens using a previously learned merge table.
+ * Convert an input string into BPE token IDs using a provided merge table.
  *
  * @param text - The input string to encode
- * @param mergeTable - The learned merge rules from the `train` step
- * @param normalizationConfig - Shared text cleanup rules applied before encoding
- * @returns Array of token IDs
+ * @param mergeTable - Ordered list of learned merge rules to apply
+ * @param normalizationConfig - Text normalization rules applied before encoding
+ * @returns The array of token IDs representing the BPE-encoded input
  */
 export function encode(
   text: string,

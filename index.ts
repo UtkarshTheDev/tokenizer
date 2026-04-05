@@ -195,6 +195,11 @@ const handleTrain = async (text: string) => {
   );
 };
 
+/**
+ * Runs the interactive CLI loop for training, encoding, decoding, saving, loading, and viewing stats for BPE and WordPiece tokenizers.
+ *
+ * This function presents the menu, prompts for user commands, executes the selected actions (switching tokenizers, training from text or file, encoding/decoding, saving/loading models, showing stats, clearing, and exiting), and continues until the user chooses to exit. It updates the module-level tokenizer state and prints results and error messages to the console.
+ */
 async function main() {
   while (true) {
     printMenu();
