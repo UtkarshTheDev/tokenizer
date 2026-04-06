@@ -374,12 +374,12 @@ async function main() {
           console.log(
             `  Learned merges      : ${currentTrainingStats.learnedUnits}`,
           );
+          console.log(`  Final vocab size    : ${currentVocabSize}`);
         } else {
           console.log(
             `  Trained vocab size  : ${currentTrainingStats.learnedUnits}`,
           );
         }
-        console.log(`  Final vocab size    : ${currentVocabSize}`);
 
         console.log("\n── Compression ─────────────────────────────");
         console.log(
