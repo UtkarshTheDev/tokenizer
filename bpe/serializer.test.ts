@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
+import { DEFAULT_NORMALIZATION_CONFIG, normalizeText } from "../Normalizer";
 import { decode, encode, train } from "./tokenizer";
 import { deserializeBpeModel, serializeBpeModel } from "./serializer";
 
@@ -35,7 +35,8 @@ describe("bpe serialization round-trip", () => {
     );
     const serialized = serializeBpeModel(mergeTable, normalizationConfig);
     const loaded = deserializeBpeModel(serialized);
-    const text = "banana bandana";
+    const text = "banana  bandana";
+    const normalizedText = normalizeText(text, normalizationConfig);
 
     expect(
       encode(text, loaded.mergeTable, loaded.normalizationConfig),
@@ -46,7 +47,7 @@ describe("bpe serialization round-trip", () => {
         loaded.mergeTable,
       ),
     ).toBe(
-      text,
+      normalizedText,
     );
   });
 });

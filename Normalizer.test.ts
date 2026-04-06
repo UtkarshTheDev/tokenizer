@@ -85,4 +85,15 @@ describe("normalizeText", () => {
       "café naïve résumé",
     );
   });
+
+  test("strips accents without applying unicode form normalization when unicodeForm is omitted", () => {
+    const config: NormalizationConfig = {
+      stripAccents: true,
+      lowercase: false,
+      collapseWhitespace: false,
+      trimWhitespace: false,
+    };
+
+    expect(normalizeText("café", config)).toBe("cafe");
+  });
 });
