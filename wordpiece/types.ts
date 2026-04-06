@@ -1,3 +1,5 @@
+import type { NormalizationConfig } from "../Normalizer";
+
 /**
  * This is the model object used by the WordPiece tokenizer.
  *
@@ -56,10 +58,6 @@ export const model: WordPieceModel = {
   idToToken,
   unkToken: "[UNK]",
 };
-
-interface NormalizationConfig {
-  lowercase: boolean;
-}
 
 export interface WordPieceSerializedModel {
   type: "wordpiece";

@@ -555,6 +555,47 @@ const decoded = decode(encoded, mergeTable);
 console.log(decoded);
 ```
 
+### Normalization before BPE
+
+This project now includes a shared normalization step before BPE training and
+encoding.
+
+That means BPE no longer sees only the raw text. It can first apply rules like:
+
+- Unicode normalization
+- optional accent stripping
+- lowercasing
+- collapsing repeated whitespace
+- trimming edges
+
+So the flow becomes:
+
+```txt
+raw text -> normalize -> pre-tokenize -> BPE train/encode
+```
+
+Why this matters:
+
+- the text seen during training can match the text seen later during encoding
+- small formatting differences become less disruptive
+- you can learn that tokenization is usually part of a larger preprocessing pipeline
+
+Example:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "café world"
+```
+
+If accent stripping is enabled:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "cafe world"
+```
+
 ### Saving and loading a BPE model
 
 For this BPE implementation, the important thing to save is the **merge table**.

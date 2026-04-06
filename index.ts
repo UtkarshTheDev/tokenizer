@@ -29,6 +29,10 @@ import {
   decode as decodeWordPiece,
 } from "./wordpiece/tokenizer";
 import type { WordPieceModel } from "./wordpiece/types";
+import {
+  DEFAULT_NORMALIZATION_CONFIG,
+  type NormalizationConfig,
+} from "./Normalizer";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -37,8 +41,26 @@ const rl = readline.createInterface({ input, output });
 // This lets a learner load or train BPE and WordPiece models in the same session
 // without throwing the other one away. `currentTokenizer` only tells us which
 // slot encode/decode/train commands should use right now.
-let currentMergeTable: MergeTable | null = null;
-let currentWordPieceModel: WordPieceModel | null = null;
+type BpeSlot = {
+  mergeTable: MergeTable | null;
+  normalizationConfig: NormalizationConfig;
+};
+
+type WordPieceSlot = {
+  model: WordPieceModel | null;
+  normalizationConfig: NormalizationConfig;
+};
+
+const bpeSlot: BpeSlot = {
+  mergeTable: null,
+  normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+};
+
+const wordPieceSlot: WordPieceSlot = {
+  model: null,
+  normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+};
+
 let currentTokenizer: TokenizerKind = "bpe";
 let currentVocabSize = 256;
 let currentTrainingStats: {
@@ -103,7 +125,7 @@ const printMenu = () => {
   );
   console.log(`================================`);
   console.log(
-    `Loaded models -> BPE: ${currentMergeTable === null ? "empty" : "ready"}, WordPiece: ${currentWordPieceModel === null ? "empty" : "ready"}`,
+    `Loaded models -> BPE: ${bpeSlot.mergeTable === null ? "empty" : "ready"}, WordPiece: ${wordPieceSlot.model === null ? "empty" : "ready"}`,
   );
   console.log(`1. Select tokenizer (BPE / WordPiece)`);
   console.log(`2. Train on text (type directly)`);
@@ -133,7 +155,7 @@ const handleTrain = async (text: string) => {
   );
 
   let vocabSize = parseInt(vocabStr, 10);
-  if (isNaN(vocabSize)) vocabSize = defaultVocabSize;
+  if (Number.isNaN(vocabSize)) vocabSize = defaultVocabSize;
   if (vocabSize < minVocabSize) vocabSize = minVocabSize;
 
   console.log(
@@ -144,11 +166,15 @@ const handleTrain = async (text: string) => {
   const originalBytes = Buffer.from(text, "utf-8").length;
 
   if (currentTokenizer === "bpe") {
-    const { mergeTable, tokens } = train(text, vocabSize);
+    const { mergeTable, tokens } = train(
+      text,
+      vocabSize,
+      bpeSlot.normalizationConfig,
+    );
     const timeMs = (performance.now() - start).toFixed(2);
     const finalTokens = tokens.length;
 
-    currentMergeTable = mergeTable;
+    bpeSlot.mergeTable = mergeTable;
     currentVocabSize = 256 + mergeTable.length;
     currentTrainingStats = {
       tokenizer: "bpe",
@@ -169,12 +195,20 @@ const handleTrain = async (text: string) => {
     return;
   }
 
-  const model = trainWordPiece(text, vocabSize);
-  const encoded = encodeWordPiece(text, model);
+  const model = trainWordPiece(
+    text,
+    vocabSize,
+    wordPieceSlot.normalizationConfig,
+  );
+  const encoded = encodeWordPiece(
+    text,
+    model,
+    wordPieceSlot.normalizationConfig,
+  );
   const timeMs = (performance.now() - start).toFixed(2);
   const finalTokens = encoded.length;
 
-  currentWordPieceModel = model;
+  wordPieceSlot.model = model;
   currentVocabSize = model.idToToken.length;
   currentTrainingStats = {
     tokenizer: "wordpiece",
@@ -193,6 +227,11 @@ const handleTrain = async (text: string) => {
   );
 };
 
+/**
+ * Runs the interactive CLI loop for training, encoding, decoding, saving, loading, and viewing stats for BPE and WordPiece tokenizers.
+ *
+ * This function presents the menu, prompts for user commands, executes the selected actions (switching tokenizers, training from text or file, encoding/decoding, saving/loading models, showing stats, clearing, and exiting), and continues until the user chooses to exit. It updates the module-level tokenizer state and prints results and error messages to the console.
+ */
 async function main() {
   while (true) {
     printMenu();
@@ -250,11 +289,11 @@ async function main() {
         break;
       }
       case "encode": {
-        if (currentTokenizer === "bpe" && !currentMergeTable) {
+        if (currentTokenizer === "bpe" && !bpeSlot.mergeTable) {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
-        if (currentTokenizer === "wordpiece" && !currentWordPieceModel) {
+        if (currentTokenizer === "wordpiece" && !wordPieceSlot.model) {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
@@ -263,8 +302,16 @@ async function main() {
         const start = performance.now();
         const tokens =
           currentTokenizer === "bpe"
-            ? encode(text, currentMergeTable as MergeTable)
-            : encodeWordPiece(text, currentWordPieceModel as WordPieceModel);
+            ? encode(
+                text,
+                bpeSlot.mergeTable as MergeTable,
+                bpeSlot.normalizationConfig,
+              )
+            : encodeWordPiece(
+                text,
+                wordPieceSlot.model as WordPieceModel,
+                wordPieceSlot.normalizationConfig,
+              );
         const timeMs = (performance.now() - start).toFixed(3);
 
         console.log(`\nEncoded Tokens: [${tokens.join(", ")}]`);
@@ -275,11 +322,11 @@ async function main() {
         break;
       }
       case "decode": {
-        if (currentTokenizer === "bpe" && !currentMergeTable) {
+        if (currentTokenizer === "bpe" && !bpeSlot.mergeTable) {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
-        if (currentTokenizer === "wordpiece" && !currentWordPieceModel) {
+        if (currentTokenizer === "wordpiece" && !wordPieceSlot.model) {
           console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
           break;
         }
@@ -291,16 +338,13 @@ async function main() {
           const tokens = cleanStr
             .split(",")
             .map((s) => parseInt(s.trim(), 10))
-            .filter((n) => !isNaN(n));
+            .filter((n) => !Number.isNaN(n));
 
           const start = performance.now();
           const text =
             currentTokenizer === "bpe"
-              ? decode(tokens, currentMergeTable as MergeTable)
-              : decodeWordPiece(
-                  tokens,
-                  currentWordPieceModel as WordPieceModel,
-                );
+              ? decode(tokens, bpeSlot.mergeTable as MergeTable)
+              : decodeWordPiece(tokens, wordPieceSlot.model as WordPieceModel);
           const timeMs = (performance.now() - start).toFixed(3);
 
           console.log(`\nDecoded Text: "${text}"`);
@@ -330,12 +374,12 @@ async function main() {
           console.log(
             `  Learned merges      : ${currentTrainingStats.learnedUnits}`,
           );
+          console.log(`  Final vocab size    : ${currentVocabSize}`);
         } else {
           console.log(
-            `  Final vocab size    : ${currentTrainingStats.learnedUnits}`,
+            `  Trained vocab size  : ${currentTrainingStats.learnedUnits}`,
           );
         }
-        console.log(`  Final vocab size    : ${currentVocabSize}`);
 
         console.log("\n── Compression ─────────────────────────────");
         console.log(
@@ -357,19 +401,29 @@ async function main() {
           // Save whichever tokenizer is currently active. The persistence helpers
           // convert our runtime model into a JSON-friendly file format.
           if (currentTokenizer === "wordpiece") {
-            if (currentWordPieceModel === null) {
+            if (wordPieceSlot.model === null) {
               console.log("❌ Train or load a WordPiece model first.");
               break;
             }
-            saveWordPieceModel(__dirname, location, currentWordPieceModel);
+            saveWordPieceModel(
+              __dirname,
+              location,
+              wordPieceSlot.model,
+              wordPieceSlot.normalizationConfig,
+            );
           } else if (currentTokenizer === "bpe") {
-            if (currentMergeTable === null) {
+            if (bpeSlot.mergeTable === null) {
               console.log(
                 "❌ Train or load a Byte Pair Encoding(BPE) model first.",
               );
               break;
             }
-            saveBpeModel(__dirname, location, currentMergeTable);
+            saveBpeModel(
+              __dirname,
+              location,
+              bpeSlot.mergeTable,
+              bpeSlot.normalizationConfig,
+            );
           }
           console.log(
             `Saved ${currentTokenizer} tokenizer model to ${location}`,
@@ -400,12 +454,15 @@ async function main() {
 
           if (type === "bpe") {
             const loadedModel = loadBpeModel(parse);
-            currentMergeTable = loadedModel;
-            currentVocabSize = BaseVocabSize + loadedModel.length;
+            bpeSlot.normalizationConfig = loadedModel.normalizationConfig;
+            bpeSlot.mergeTable = loadedModel.mergeTable;
+            currentVocabSize = BaseVocabSize + loadedModel.mergeTable.length;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
-            currentWordPieceModel = loadedModel;
-            currentVocabSize = loadedModel.idToToken.length;
+            wordPieceSlot.normalizationConfig =
+              loadedModel.normalizationConfig;
+            wordPieceSlot.model = loadedModel.model;
+            currentVocabSize = loadedModel.model.idToToken.length;
           }
 
           // Important UX choice: loading a model fills that tokenizer's slot,

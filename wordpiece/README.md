@@ -834,6 +834,48 @@ The structure that stores:
 
 The text data used to train the tokenizer.
 
+### Normalization before WordPiece
+
+WordPiece benefits a lot from normalization because it matches text using a
+string vocabulary. Small input differences can easily change whether a piece is
+found in the model.
+
+This project now applies a shared normalization step before WordPiece training
+and encoding. The available normalization rules include:
+
+- Unicode normalization
+- optional accent stripping
+- lowercasing
+- collapsing repeated whitespace
+- trimming leading and trailing whitespace
+
+So the flow becomes:
+
+```txt
+raw text -> normalize -> pre-tokenize -> greedy WordPiece matching
+```
+
+Example:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "café world"
+```
+
+If accent stripping is enabled:
+
+```txt
+"  Café   WORLD  "
+-> normalize
+-> "cafe world"
+```
+
+The most important lesson here is consistency:
+
+- training should use the same normalization rules as encoding later
+- otherwise the learned vocabulary and the runtime input can drift apart
+
 ### Saving and loading a WordPiece model
 
 For WordPiece, the most important thing to save is the learned vocabulary order.

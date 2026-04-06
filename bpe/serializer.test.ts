@@ -1,23 +1,53 @@
 import { describe, expect, it } from "bun:test";
+import { DEFAULT_NORMALIZATION_CONFIG, normalizeText } from "../Normalizer";
 import { decode, encode, train } from "./tokenizer";
 import { deserializeBpeModel, serializeBpeModel } from "./serializer";
 
 describe("bpe serialization round-trip", () => {
   it("preserves merge table structure after serialize and deserialize", () => {
-    const { mergeTable } = train("banana bandana banana", 270);
-    const serialized = serializeBpeModel(mergeTable);
+    const normalizationConfig = {
+      ...DEFAULT_NORMALIZATION_CONFIG,
+      trimWhitespace: false,
+    };
+    const { mergeTable } = train(
+      "banana bandana banana",
+      270,
+      normalizationConfig,
+    );
+    const serialized = serializeBpeModel(mergeTable, normalizationConfig);
     const loaded = deserializeBpeModel(serialized);
 
-    expect(loaded).toEqual(mergeTable);
+    expect(loaded.mergeTable).toEqual(mergeTable);
+    expect(loaded.normalizationConfig).toEqual(
+      serialized.normalization ?? DEFAULT_NORMALIZATION_CONFIG,
+    );
   });
 
   it("preserves encode and decode behavior after round-trip", () => {
-    const { mergeTable } = train("banana bandana banana", 270);
-    const serialized = serializeBpeModel(mergeTable);
+    const normalizationConfig = {
+      ...DEFAULT_NORMALIZATION_CONFIG,
+      collapseWhitespace: false,
+    };
+    const { mergeTable } = train(
+      "banana bandana banana",
+      270,
+      normalizationConfig,
+    );
+    const serialized = serializeBpeModel(mergeTable, normalizationConfig);
     const loaded = deserializeBpeModel(serialized);
-    const text = "banana bandana";
+    const text = "banana  bandana";
+    const normalizedText = normalizeText(text, normalizationConfig);
 
-    expect(encode(text, loaded)).toEqual(encode(text, mergeTable));
-    expect(decode(encode(text, loaded), loaded)).toBe(text);
+    expect(
+      encode(text, loaded.mergeTable, loaded.normalizationConfig),
+    ).toEqual(encode(text, mergeTable, normalizationConfig));
+    expect(
+      decode(
+        encode(text, loaded.mergeTable, loaded.normalizationConfig),
+        loaded.mergeTable,
+      ),
+    ).toBe(
+      normalizedText,
+    );
   });
 });

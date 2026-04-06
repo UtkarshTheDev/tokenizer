@@ -16,6 +16,11 @@
  *    all occurrences of the pair with the new ID.
  */
 
+import {
+  DEFAULT_NORMALIZATION_CONFIG,
+  normalizeText,
+  type NormalizationConfig,
+} from "../Normalizer";
 import preTokenize from "./preTokenizer";
 
 // A tuple representing [pairKey, new_token_id]
@@ -118,9 +123,17 @@ function replacePair(
  *
  * @param text - The raw text to train on
  * @param targetVocabSize - The desired total vocabulary size (must be >= BaseVocabSize)
+ * @param normalizationConfig - Shared text cleanup rules applied before training starts
  * @returns An object containing the learned merge table and the final compressed tokens
  */
-export function train(text: string, targetVocabSize: number): TrainingResult {
+export function train(
+  text: string,
+  targetVocabSize: number,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): TrainingResult {
+  // BPE learns from normalized text so later encode() calls can see the same
+  // cleaned input shape that training saw.
+  text = normalizeText(text, normalizationConfig);
   if (targetVocabSize < BaseVocabSize) {
     throw new Error(
       "Target vocabulary size must be at least BaseVocabSize (base UTF-8 size).",
@@ -156,13 +169,21 @@ export function train(text: string, targetVocabSize: number): TrainingResult {
 }
 
 /**
- * Encodes a string into an array of BPE tokens using a previously learned merge table.
+ * Convert an input string into BPE token IDs using a provided merge table.
  *
  * @param text - The input string to encode
- * @param mergeTable - The learned merge rules from the `train` step
- * @returns Array of token IDs
+ * @param mergeTable - Ordered list of learned merge rules to apply
+ * @param normalizationConfig - Text normalization rules applied before encoding
+ * @returns The array of token IDs representing the BPE-encoded input
  */
-export function encode(text: string, mergeTable: MergeTable): number[] {
+export function encode(
+  text: string,
+  mergeTable: MergeTable,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+): number[] {
+  // Encode uses the same normalization layer as train() so both phases see
+  // consistent text.
+  text = normalizeText(text, normalizationConfig);
   // Start with raw UTF-8 bytes
   let tokens = Array.from(Buffer.from(text, "utf-8"));
 
