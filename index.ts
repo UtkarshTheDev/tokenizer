@@ -359,7 +359,7 @@ const printTrainingStats = (stats: TrainingStats) => {
   console.log("\n── Compression ─────────────────────────────");
   console.log(`  Original bytes      : ${stats.originalBytes} (raw bytes)`);
   console.log(
-    `  After ${stats.tokenizer.toUpperCase()}    : ${stats.finalTokens} tokens`,
+    `  After ${stats.tokenizer.padEnd(9).toUpperCase()} : ${stats.finalTokens} tokens`,
   );
   console.log(`  Compression ratio   : ${stats.ratio}x`);
   console.log(`  Space saved         : ${stats.spaceSaved}%`);
