@@ -3,9 +3,9 @@ import { DEFAULT_NORMALIZATION_CONFIG } from "@tokenizer/core";
 import {
   BaseVocabSize,
   encode as encodeBPE,
-  train,
   encodeWordPiece,
   sampleWordPieceModel,
+  train,
   type WordPieceModel,
 } from "@tokenizer/models";
 import { getBPEMetrics, getWordPieceMetrics } from "./metrics";
@@ -22,11 +22,9 @@ describe("evaluation metrics", () => {
     expect(stats.vocabSize).toBe(BaseVocabSize + mergeTable.length);
     expect(stats.originalBytes).toBe(originalBytes);
     expect(stats.tokenCount).toBe(tokens.length);
-    expect(stats.compressionRatio).toBeCloseTo(
-      originalBytes / tokens.length,
-    );
+    expect(stats.compressionRatio).toBeCloseTo(originalBytes / tokens.length);
     expect(stats.reductionPercent).toBeCloseTo(
-      ((originalBytes - tokens.length) / originalBytes) * 100,
+      ((originalBytes - tokens.length) / originalBytes) * 100
     );
     expect(stats.uniqueTokenCount).toBe(new Set(tokens).size);
     expect(stats.unknownTokenCount).toBe(0);
@@ -37,14 +35,22 @@ describe("evaluation metrics", () => {
 
   it("computes WordPiece unknown-token metrics from the model unk token", () => {
     const text = "hello unknown world";
-    const tokens = encodeWordPiece(text, sampleWordPieceModel, DEFAULT_NORMALIZATION_CONFIG);
-    const unkTokenId = sampleWordPieceModel.tokenToId.get(sampleWordPieceModel.unkToken);
-    const unknownTokenCount = tokens.filter((token) => token === unkTokenId).length;
+    const tokens = encodeWordPiece(
+      text,
+      sampleWordPieceModel,
+      DEFAULT_NORMALIZATION_CONFIG
+    );
+    const unkTokenId = sampleWordPieceModel.tokenToId.get(
+      sampleWordPieceModel.unkToken
+    );
+    const unknownTokenCount = tokens.filter(
+      (token) => token === unkTokenId
+    ).length;
 
     const stats = getWordPieceMetrics(
       sampleWordPieceModel,
       text,
-      DEFAULT_NORMALIZATION_CONFIG,
+      DEFAULT_NORMALIZATION_CONFIG
     );
 
     expect(stats.vocabSize).toBe(sampleWordPieceModel.idToToken.length);
@@ -52,7 +58,7 @@ describe("evaluation metrics", () => {
     expect(stats.uniqueTokenCount).toBe(new Set(tokens).size);
     expect(stats.unknownTokenCount).toBe(unknownTokenCount);
     expect(stats.unknownTokenRate).toBeCloseTo(
-      unknownTokenCount / tokens.length,
+      unknownTokenCount / tokens.length
     );
   });
 
@@ -79,7 +85,7 @@ describe("evaluation metrics", () => {
     };
 
     expect(() => getWordPieceMetrics(brokenModel, "hello")).toThrow(
-      'Invalid WordPiece model: unkToken "[UNK]" is missing from tokenToId vocabulary.',
+      'Invalid WordPiece model: unkToken "[UNK]" is missing from tokenToId vocabulary.'
     );
   });
 });

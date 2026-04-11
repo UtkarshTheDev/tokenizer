@@ -1,40 +1,43 @@
 import {
-  BaseVocabSize,
-  decode as decodeBPE,
-  encode as encodeBPE,
-  encodeWordPiece,
-  decodeWordPiece,
-  type MergeTable,
-  type WordPieceModel,
-} from "@tokenizer/models";
-import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
 } from "@tokenizer/core";
-import { DEFAULT_TEXT } from "./defaultText";
+import {
+  BaseVocabSize,
+  decode as decodeBPE,
+  decodeWordPiece,
+  encode as encodeBPE,
+  encodeWordPiece,
+  type MergeTable,
+  type WordPieceModel,
+} from "@tokenizer/models";
+import { DEFAULT_TEXT } from "./default-text";
 
 export interface TokenizerStats {
-  vocabSize: number;
-  originalBytes: number;
-  tokenCount: number;
-  encodeTime: number;
-  decodeTime: number;
+  avgCharsPerToken: number;
   compressionRatio: number;
+  decodeTime: number;
+  encodeTime: number;
+  originalBytes: number;
   reductionPercent: number;
+  tokenCount: number;
+  uniqueTokenCount: number;
   unknownTokenCount: number;
   unknownTokenRate: number;
-  uniqueTokenCount: number;
-  avgCharsPerToken: number;
+  vocabSize: number;
 }
 
 interface DerivedMetrics {
+  avgCharsPerToken: number;
   compressionRatio: number;
   reductionPercent: number;
   uniqueTokenCount: number;
-  avgCharsPerToken: number;
 }
 
-const computeDerivedMetrics = (text: string, tokens: number[]): DerivedMetrics => {
+const computeDerivedMetrics = (
+  text: string,
+  tokens: number[]
+): DerivedMetrics => {
   const tokenCount = tokens.length;
   const originalBytes = Buffer.from(text, "utf-8").length;
 
@@ -65,7 +68,7 @@ const computeDerivedMetrics = (text: string, tokens: number[]): DerivedMetrics =
 export const getBPEMetrics = (
   mergeTable: MergeTable,
   text: string = DEFAULT_TEXT,
-  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG
 ): TokenizerStats => {
   const unknownTokenCount = 0;
   const unknownTokenRate = 0;
@@ -121,7 +124,7 @@ export const getBPEMetrics = (
 export const getWordPieceMetrics = (
   model: WordPieceModel,
   text: string = DEFAULT_TEXT,
-  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
+  normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG
 ): TokenizerStats => {
   let unknownTokenRate = 0;
   let unknownTokenCount = 0;
@@ -151,13 +154,15 @@ export const getWordPieceMetrics = (
   const unkTokenID = model.tokenToId.get(model.unkToken);
   if (unkTokenID === undefined) {
     throw new Error(
-      `Invalid WordPiece model: unkToken "${model.unkToken}" is missing from tokenToId vocabulary.`,
+      `Invalid WordPiece model: unkToken "${model.unkToken}" is missing from tokenToId vocabulary.`
     );
   }
 
   if (tokenCount !== 0) {
     for (const token of tokens) {
-      if (token === unkTokenID) unknownTokenCount++;
+      if (token === unkTokenID) {
+        unknownTokenCount++;
+      }
     }
     unknownTokenRate = unknownTokenCount / tokenCount;
   }
