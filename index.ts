@@ -357,7 +357,7 @@ const printTrainingStats = (stats: TrainingStats) => {
   }
 
   console.log("\n── Compression ─────────────────────────────");
-  console.log(`  Original tokens     : ${stats.originalBytes} (raw bytes)`);
+  console.log(`  Original bytes      : ${stats.originalBytes} (raw bytes)`);
   console.log(
     `  After ${stats.tokenizer.toUpperCase()}    : ${stats.finalTokens} tokens`,
   );
