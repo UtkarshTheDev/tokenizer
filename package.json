@@ -8,6 +8,7 @@
     "apps/cli"
   ],
   "scripts": {
+    "cli": "bun run apps/cli/src/index.ts",
     "test": "bun test",
     "test:core": "bun test --dir packages/core",
     "test:models": "bun test --dir packages/models",

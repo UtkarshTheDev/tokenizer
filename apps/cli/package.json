@@ -6,6 +6,10 @@
   "bin": {
     "tokenizer": "./src/index.ts"
   },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run src/index.ts"
+  },
   "dependencies": {
     "@tokenizer/core": "workspace:*",
     "@tokenizer/models": "workspace:*",

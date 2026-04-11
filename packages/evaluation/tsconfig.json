@@ -1,3 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json"
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@tokenizer/core": ["../core/src/index.ts"],
+      "@tokenizer/models": ["../models/src/index.ts"]
+    }
+  }
 }
