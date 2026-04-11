@@ -29,6 +29,13 @@ export interface TokenizerStats {
   avgCharsPerToken: number;
 }
 
+/**
+ * Measure how a trained BPE model behaves on one piece of text.
+ *
+ * This function intentionally does not compare BPE with any other tokenizer.
+ * It only answers: "given this BPE merge table and this text, what happened?"
+ * `compare.ts` is responsible for putting multiple tokenizer results side by side.
+ */
 export const getBPEMetrics = (
   mergeTable: MergeTable,
   text: string = DEFAULT_TEXT,
@@ -42,8 +49,11 @@ export const getBPEMetrics = (
   let avgCharsPerToken = 0;
   let uniqueTokenCount = 0;
 
+  // BPE starts with 256 byte tokens, then adds one vocabulary entry per merge.
   const vocabSize = BaseVocabSize + mergeTable.length;
 
+  // Time encode and decode separately because tokenizers can be asymmetric:
+  // encoding may do search/merge work, while decoding may mostly reverse IDs.
   const encodeStart = performance.now();
   const tokens = encodeBPE(text, mergeTable, normalizationConfig);
   const encodeEnd = performance.now();
@@ -55,13 +65,20 @@ export const getBPEMetrics = (
   const decodeTime = decodeEnd - decodeStart;
 
   const tokenCount = tokens.length;
+  // Use UTF-8 bytes instead of string length for compression-style metrics.
+  // JavaScript string length counts UTF-16 code units, which can be misleading
+  // for Unicode text.
   const bytesCount = Buffer.from(text, "utf-8").length;
 
   if (tokenCount !== 0 && bytesCount !== 0) {
+    // In this project, "compression ratio" means bytes represented per token.
+    // Higher usually means the tokenizer produced fewer tokens for the input.
     compressionRatio = bytesCount / tokenCount;
     reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
     avgCharsPerToken = text.length / tokenCount;
 
+    // Unique token count shows how many distinct token IDs were used.
+    // It is tokenizer-agnostic, so the same logic works for BPE and WordPiece.
     const tokenSet = new Set(tokens);
     uniqueTokenCount = tokenSet.size;
   }
@@ -81,6 +98,12 @@ export const getBPEMetrics = (
   return stats;
 };
 
+/**
+ * Measure how a trained WordPiece model behaves on one piece of text.
+ *
+ * WordPiece has an extra quality signal: `[UNK]`. A high unknown-token rate
+ * usually means the vocabulary cannot represent the input well.
+ */
 export const getWordPieceMetrics = (
   model: WordPieceModel,
   text: string = DEFAULT_TEXT,
@@ -115,6 +138,7 @@ export const getWordPieceMetrics = (
 
     const tokenSet = new Set(tokens);
     uniqueTokenCount = tokenSet.size;
+    // Do not assume `[UNK]` is always ID 0. The model owns that mapping.
     const unkTokenID = model.tokenToId.get(model.unkToken);
     unknownTokenCount = 0;
     for (const token of tokens) {

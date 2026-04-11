@@ -14,6 +14,10 @@ export interface CompareStats {
   bpe: TokenizerStats;
   wordpiece: TokenizerStats;
 }
+
+// The comparison layer receives already-trained models.
+// It should not train, save, load, or print. That keeps it reusable from the
+// CLI today and from a future API layer later.
 interface BpeInput {
   mergeTable: MergeTable;
   normalizationConfig?: NormalizationConfig;
@@ -29,6 +33,9 @@ export const compareTokenizer = (
   bpe: BpeInput,
   wordpiece: WordpieceInput,
 ): CompareStats => {
+  // Each tokenizer can have its own normalization settings. Keeping these
+  // separate avoids the bug where loading/evaluating one tokenizer accidentally
+  // changes the behavior of the other.
   const bpeNormalizationConfig =
     bpe.normalizationConfig ?? DEFAULT_NORMALIZATION_CONFIG;
   const wordPieceNormalizationConfig =

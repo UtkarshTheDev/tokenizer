@@ -244,6 +244,8 @@ const printMetricRow = (
   bpeValue: string | number,
   wordPieceValue: string | number,
 ) => {
+  // Keep table formatting local to the CLI. The eval module returns data only;
+  // this function decides how that data should look in a terminal.
   console.log(
     `  ${label.padEnd(22)} ${String(bpeValue).padStart(14)} ${String(wordPieceValue).padStart(14)}`,
   );
@@ -254,6 +256,8 @@ const printComparisonReport = (
   bpeStats: TokenizerStats,
   wordPieceStats: TokenizerStats,
 ) => {
+  // This report is intentionally compact: enough numbers to compare behavior,
+  // but not so much output that a beginner cannot tell what matters.
   console.log("\n╔══════════════════════════════════════════════════════╗");
   console.log("║              TOKENIZER COMPARISON REPORT            ║");
   console.log("╚══════════════════════════════════════════════════════╝\n");
@@ -483,6 +487,8 @@ async function main() {
         break;
       }
       case "compare": {
+        // Comparison needs both models because it evaluates the same text
+        // against BPE and WordPiece side by side.
         if (bpeSlot.mergeTable === null || wordPieceSlot.model === null) {
           console.log(
             "❌ Train or load both BPE and WordPiece models before comparing.",
@@ -494,6 +500,9 @@ async function main() {
           "Enter text to compare (press Enter for default evaluation text): ",
         );
         const text = rawText.trim().length === 0 ? DEFAULT_TEXT : rawText;
+        // compareTokenizer is the pure evaluation layer. The CLI passes each
+        // tokenizer slot's own normalization config so the comparison reflects
+        // how that model was trained or loaded.
         const comparison = compareTokenizer(
           text,
           {
