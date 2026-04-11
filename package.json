@@ -13,10 +13,22 @@
     "test:core": "bun test --dir packages/core",
     "test:models": "bun test --dir packages/models",
     "test:evaluation": "bun test --dir packages/evaluation",
-    "test:cli": "bun test --dir apps/cli"
+    "test:cli": "bun test --dir apps/cli",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.11",
     "@types/bun": "latest",
-    "typescript": "^5.0.0"
+    "lefthook": "^2.1.5",
+    "lint-staged": "^16.4.0",
+    "typescript": "^5.0.0",
+    "ultracite": "7.5.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
+    ]
   }
 }

@@ -4,6 +4,7 @@
     "paths": {
       "@tokenizer/core": ["../core/src/index.ts"],
       "@tokenizer/models": ["../models/src/index.ts"]
-    }
+    },
+    "strictNullChecks": true
   }
 }
