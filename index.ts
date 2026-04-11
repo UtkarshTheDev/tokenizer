@@ -40,6 +40,17 @@ import type { TokenizerStats } from "./eval/metrics";
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
 
+type TrainingStats = {
+  tokenizer: TokenizerKind;
+  timeMs: string;
+  learnedUnits: number;
+  finalVocabSize: number;
+  originalBytes: number;
+  finalTokens: number;
+  ratio: string;
+  spaceSaved: string;
+};
+
 // The CLI keeps one "slot" for each tokenizer type.
 // This lets a learner load or train BPE and WordPiece models in the same session
 // without throwing the other one away. `currentTokenizer` only tells us which
@@ -47,34 +58,28 @@ const rl = readline.createInterface({ input, output });
 type BpeSlot = {
   mergeTable: MergeTable | null;
   normalizationConfig: NormalizationConfig;
+  trainingStats: TrainingStats | null;
 };
 
 type WordPieceSlot = {
   model: WordPieceModel | null;
   normalizationConfig: NormalizationConfig;
+  trainingStats: TrainingStats | null;
 };
 
 const bpeSlot: BpeSlot = {
   mergeTable: null,
   normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+  trainingStats: null,
 };
 
 const wordPieceSlot: WordPieceSlot = {
   model: null,
   normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+  trainingStats: null,
 };
 
 let currentTokenizer: TokenizerKind = "bpe";
-let currentVocabSize = 256;
-let currentTrainingStats: {
-  tokenizer: TokenizerKind;
-  timeMs: string;
-  learnedUnits: number;
-  originalBytes: number;
-  finalTokens: number;
-  ratio: string;
-  spaceSaved: string;
-} | null = null;
 
 const getAction = (input: string) => {
   const command = input.trim().toLowerCase();
@@ -174,6 +179,23 @@ const handleTrain = async (text: string) => {
   const start = performance.now();
   const originalBytes = Buffer.from(text, "utf-8").length;
 
+  const buildCompressionStats = (finalTokens: number) => {
+    if (originalBytes === 0 || finalTokens === 0) {
+      return {
+        ratio: "0.00",
+        spaceSaved: "0.0",
+      };
+    }
+
+    return {
+      ratio: (originalBytes / finalTokens).toFixed(2),
+      spaceSaved: (
+        ((originalBytes - finalTokens) / originalBytes) *
+        100
+      ).toFixed(1),
+    };
+  };
+
   if (currentTokenizer === "bpe") {
     const { mergeTable, tokens } = train(
       text,
@@ -182,24 +204,23 @@ const handleTrain = async (text: string) => {
     );
     const timeMs = (performance.now() - start).toFixed(2);
     const finalTokens = tokens.length;
+    const finalVocabSize = BaseVocabSize + mergeTable.length;
+    const compressionStats = buildCompressionStats(finalTokens);
 
     bpeSlot.mergeTable = mergeTable;
-    currentVocabSize = 256 + mergeTable.length;
-    currentTrainingStats = {
+    bpeSlot.trainingStats = {
       tokenizer: "bpe",
       timeMs,
       learnedUnits: mergeTable.length,
+      finalVocabSize,
       originalBytes,
       finalTokens,
-      ratio: (originalBytes / finalTokens).toFixed(2),
-      spaceSaved: (
-        ((originalBytes - finalTokens) / originalBytes) *
-        100
-      ).toFixed(1),
+      ratio: compressionStats.ratio,
+      spaceSaved: compressionStats.spaceSaved,
     };
 
     console.log(
-      `✅ Training complete in ${timeMs} ms. Learned ${mergeTable.length} merges (final vocab: ${currentVocabSize}).`,
+      `✅ Training complete in ${timeMs} ms. Learned ${mergeTable.length} merges (final vocab: ${finalVocabSize}).`,
     );
     return;
   }
@@ -216,19 +237,19 @@ const handleTrain = async (text: string) => {
   );
   const timeMs = (performance.now() - start).toFixed(2);
   const finalTokens = encoded.length;
+  const finalVocabSize = model.idToToken.length;
+  const compressionStats = buildCompressionStats(finalTokens);
 
   wordPieceSlot.model = model;
-  currentVocabSize = model.idToToken.length;
-  currentTrainingStats = {
+  wordPieceSlot.trainingStats = {
     tokenizer: "wordpiece",
     timeMs,
-    learnedUnits: model.idToToken.length,
+    learnedUnits: finalVocabSize,
+    finalVocabSize,
     originalBytes,
     finalTokens,
-    ratio: (originalBytes / finalTokens).toFixed(2),
-    spaceSaved: (((originalBytes - finalTokens) / originalBytes) * 100).toFixed(
-      1,
-    ),
+    ratio: compressionStats.ratio,
+    spaceSaved: compressionStats.spaceSaved,
   };
 
   console.log(
@@ -317,6 +338,31 @@ const printComparisonReport = (
   console.log(
     "\nNote: compression is measured as original UTF-8 bytes per produced token.",
   );
+};
+
+const printTrainingStats = (stats: TrainingStats) => {
+  console.log("\n╔══════════════════════════════════════════╗");
+  console.log(
+    `║   ${stats.tokenizer.toUpperCase().padEnd(16)} TOKENIZER — SUMMARY   ║`,
+  );
+  console.log("╚══════════════════════════════════════════╝\n");
+
+  console.log("── Training ────────────────────────────────");
+  console.log(`  Training time       : ${stats.timeMs} ms`);
+  if (stats.tokenizer === "bpe") {
+    console.log(`  Learned merges      : ${stats.learnedUnits}`);
+    console.log(`  Final vocab size    : ${stats.finalVocabSize}`);
+  } else {
+    console.log(`  Trained vocab size  : ${stats.learnedUnits}`);
+  }
+
+  console.log("\n── Compression ─────────────────────────────");
+  console.log(`  Original bytes      : ${stats.originalBytes} (raw bytes)`);
+  console.log(
+    `  After ${stats.tokenizer.padEnd(9).toUpperCase()} : ${stats.finalTokens} tokens`,
+  );
+  console.log(`  Compression ratio   : ${stats.ratio}x`);
+  console.log(`  Space saved         : ${stats.spaceSaved}%`);
 };
 
 const getNormalizationConfigDifferences = (
@@ -484,43 +530,19 @@ async function main() {
         break;
       }
       case "stats": {
-        if (!currentTrainingStats) {
+        const availableStats = [
+          bpeSlot.trainingStats,
+          wordPieceSlot.trainingStats,
+        ].filter((stats): stats is TrainingStats => stats !== null);
+
+        if (availableStats.length === 0) {
           console.log("❌ No training data available yet.");
           break;
         }
 
-        console.log("\n╔══════════════════════════════════════════╗");
-        console.log(
-          `║   ${currentTrainingStats.tokenizer.toUpperCase().padEnd(11)} TOKENIZER — SUMMARY   ║`,
-        );
-        console.log("╚══════════════════════════════════════════╝\n");
-
-        console.log("── Training ────────────────────────────────");
-        console.log(
-          `  Training time       : ${currentTrainingStats.timeMs} ms`,
-        );
-        if (currentTrainingStats.tokenizer === "bpe") {
-          console.log(
-            `  Learned merges      : ${currentTrainingStats.learnedUnits}`,
-          );
-          console.log(`  Final vocab size    : ${currentVocabSize}`);
-        } else {
-          console.log(
-            `  Trained vocab size  : ${currentTrainingStats.learnedUnits}`,
-          );
+        for (const stats of availableStats) {
+          printTrainingStats(stats);
         }
-
-        console.log("\n── Compression ─────────────────────────────");
-        console.log(
-          `  Original tokens     : ${currentTrainingStats.originalBytes} (raw bytes)`,
-        );
-        console.log(
-          `  After ${currentTrainingStats.tokenizer.toUpperCase()}    : ${currentTrainingStats.finalTokens} tokens`,
-        );
-        console.log(`  Compression ratio   : ${currentTrainingStats.ratio}x`);
-        console.log(
-          `  Space saved         : ${currentTrainingStats.spaceSaved}%`,
-        );
         break;
       }
       case "compare": {
@@ -618,17 +640,16 @@ async function main() {
             const loadedModel = loadBpeModel(parse);
             bpeSlot.normalizationConfig = loadedModel.normalizationConfig;
             bpeSlot.mergeTable = loadedModel.mergeTable;
-            currentVocabSize = BaseVocabSize + loadedModel.mergeTable.length;
+            bpeSlot.trainingStats = null;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
             wordPieceSlot.normalizationConfig = loadedModel.normalizationConfig;
             wordPieceSlot.model = loadedModel.model;
-            currentVocabSize = loadedModel.model.idToToken.length;
+            wordPieceSlot.trainingStats = null;
           }
 
           // Important UX choice: loading a model fills that tokenizer's slot,
           // but it does not switch the active tokenizer automatically.
-          currentTrainingStats = null;
           if (type === currentTokenizer) {
             console.log(`Loaded ${type.toUpperCase()} model from ${location}`);
           } else {
@@ -661,4 +682,8 @@ async function main() {
 }
 
 // Start the CLI
-main().catch(console.error);
+main().catch((error) => {
+  console.error("Fatal CLI error:", error);
+  rl.close();
+  process.exit(1);
+});
