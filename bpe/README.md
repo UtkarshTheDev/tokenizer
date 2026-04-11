@@ -621,6 +621,29 @@ train text -> learn mergeTable -> save mergeTable -> load mergeTable -> reuse it
 
 Because this BPE starts from raw UTF-8 bytes, the base vocabulary size is fixed at `256`.
 
+### Comparing BPE with WordPiece
+
+The project also includes evaluation helpers that compare BPE and WordPiece on
+the same text.
+
+For BPE, the most useful comparison numbers are:
+
+- **token count**: how many token IDs BPE produced
+- **compression ratio**: original UTF-8 bytes per produced token
+- **unique token count**: how many different token IDs appeared
+- **encode/decode time**: how quickly the learned merge table can be used
+
+BPE does not usually produce an `[UNK]` token in this implementation because it
+starts from raw UTF-8 bytes. Any text can fall back to bytes. That is why the
+BPE unknown-token count is always `0` in the comparison report.
+
+Beginner mental model:
+
+```txt
+BPE comparison asks:
+"How compactly did the merge table represent this text?"
+```
+
 ---
 
 ## Project Structure

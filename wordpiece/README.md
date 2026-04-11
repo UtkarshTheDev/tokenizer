@@ -905,6 +905,35 @@ This is a useful design pattern to learn:
 - save the minimum canonical data
 - rebuild fast lookup structures at runtime
 
+### Comparing WordPiece with BPE
+
+The project includes evaluation helpers that compare WordPiece and BPE on the
+same input text.
+
+For WordPiece, the most useful comparison numbers are:
+
+- **token count**: how many token IDs WordPiece produced
+- **compression ratio**: original UTF-8 bytes per produced token
+- **unique token count**: how many different vocabulary IDs appeared
+- **unknown-token count**: how often WordPiece had to use `[UNK]`
+- **unknown-token rate**: what fraction of output tokens were `[UNK]`
+
+The `[UNK]` metrics are especially important for WordPiece.
+
+Why?
+
+Because WordPiece cannot represent a word unless the vocabulary can fully split
+that word into known pieces. If the unknown-token rate is high, the vocabulary
+is probably too small, trained on mismatched data, or using normalization rules
+that do not match the input well.
+
+Beginner mental model:
+
+```txt
+WordPiece comparison asks:
+"How often could the vocabulary explain this text without falling back to [UNK]?"
+```
+
 ---
 
 ## Final Mental Model

@@ -89,6 +89,10 @@ Why second?
 │   └── wordpiece.png
 ├── data/
 │   └── data.txt
+├── eval/
+│   ├── defaultText.ts
+│   ├── metrics.ts
+│   └── compare.ts
 ├── index.ts
 ├── package.json
 └── tsconfig.json
@@ -108,6 +112,11 @@ Why second?
 
 **`data/data.txt`**
 - sample corpus used for training from the CLI
+
+**`eval/`**
+- contains tokenizer evaluation helpers
+- computes metrics like token count, compression ratio, encode/decode time, and unknown-token rate
+- compares BPE and WordPiece on the same input text
 
 **`index.ts`**
 - the interactive CLI entry point
@@ -223,6 +232,7 @@ When you run it, you can use either:
 | `save` or `6` | Save the currently active tokenizer model to `models/` |
 | `load` or `7` | Load a tokenizer model from `models/` into memory |
 | `stats` or `8` | Show training stats |
+| `compare` / `eval` or `9` | Compare BPE and WordPiece on the same text |
 | `clear` | Clear the terminal |
 | `exit` or `quit` | Exit the CLI |
 | `bpe` | Switch directly to BPE |
@@ -325,6 +335,55 @@ This makes experimentation easier because you do not lose the model that is alre
 5. If it is different from the active tokenizer, the active tokenizer stays unchanged
 ```
 
+### Compare BPE and WordPiece
+
+The CLI can compare both tokenizer families on the same input text.
+
+Use:
+
+```txt
+compare
+```
+
+or:
+
+```txt
+9
+```
+
+Before comparing, you need both tokenizer slots to be ready:
+
+- train or load a BPE model
+- train or load a WordPiece model
+
+Then the comparison command asks for text.
+
+- if you type text, the CLI evaluates that text
+- if you press Enter, the CLI uses a built-in default evaluation text
+
+The report shows:
+
+- vocabulary size
+- token count
+- unique token count
+- compression ratio
+- reduction percentage
+- average characters per token
+- encode and decode time
+- unknown-token count and rate
+
+The comparison uses each tokenizer's own normalization settings. This matters
+because a BPE model and a WordPiece model can be trained or loaded with different
+normalization configs.
+
+Beginner mental model:
+
+```txt
+same text -> BPE metrics
+same text -> WordPiece metrics
+compare the numbers side by side
+```
+
 ---
 
 ## Programmatic Usage
@@ -405,6 +464,7 @@ This project is built in a learning-friendly way:
 - the WordPiece code now has beginner-friendly explanations
 - both methods have dedicated README guides
 - there is a CLI for hands-on exploration
+- there is comparison tooling for measuring tokenizer behavior
 - WordPiece has tests that act like small executable examples
 
 This means you can learn in three different ways:
@@ -461,6 +521,24 @@ Open:
 - [wordpiece/tokenizer.test.ts](https://github.com/UtkarshTheDev/tokenizer/blob/main/wordpiece/tokenizer.test.ts)
 
 and treat each test as a behavior example.
+
+### Exercise 5: Compare both tokenizers
+
+Train or load both BPE and WordPiece, then run:
+
+```txt
+compare
+```
+
+Try the default evaluation text first. Then try your own text with:
+
+- repeated words
+- unknown-looking words
+- punctuation
+- mixed uppercase/lowercase
+- accented words
+
+Watch how token count, compression ratio, and WordPiece unknown rate change.
 
 ---
 
