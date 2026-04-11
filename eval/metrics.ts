@@ -57,7 +57,7 @@ export const getBPEMetrics = (
   const tokenCount = tokens.length;
   const bytesCount = Buffer.from(text, "utf-8").length;
 
-  if (tokenCount !== 0 || bytesCount !== 0) {
+  if (tokenCount !== 0 && bytesCount !== 0) {
     compressionRatio = bytesCount / tokenCount;
     reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
     avgCharsPerToken = text.length / tokenCount;
@@ -108,7 +108,7 @@ export const getWordPieceMetrics = (
   const tokenCount = tokens.length;
   const bytesCount = Buffer.from(text, "utf-8").length;
 
-  if (tokenCount !== 0 || bytesCount !== 0) {
+  if (tokenCount !== 0 && bytesCount !== 0) {
     compressionRatio = bytesCount / tokenCount;
     reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
     avgCharsPerToken = text.length / tokenCount;
