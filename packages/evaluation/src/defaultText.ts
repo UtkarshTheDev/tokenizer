@@ -7,6 +7,6 @@ export const DEFAULT_TEXT = `Hello, world! Tokenizers should handle repeated wor
  Numbers: 42, 3.14159, 1,000,000
  Mixed case: HELLO hello HeLLo
  Unicode: café, naïve, résumé
- Whitespace:   this    line	has extra spaces.
+ Whitespace:   this    line\thas extra spaces.
 
  Unknown-ish words: xqztr, neurotokenization, hyper-efficient`;

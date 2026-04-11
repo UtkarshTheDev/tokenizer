@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { train } from "../bpe/tokenizer";
-import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
-import { model } from "../wordpiece/types";
+import { train, sampleWordPieceModel } from "@tokenizer/models";
+import { DEFAULT_NORMALIZATION_CONFIG } from "@tokenizer/core";
 import { compareTokenizer } from "./compare";
 import {
   getBPEMetrics,
@@ -37,14 +36,14 @@ describe("compareTokenizer", () => {
     const comparison = compareTokenizer(
       text,
       { mergeTable, normalizationConfig: bpeConfig },
-      { model, normalizationConfig: wordPieceConfig },
+      { model: sampleWordPieceModel, normalizationConfig: wordPieceConfig },
     );
 
     expect(stableStats(comparison.bpe)).toEqual(
       stableStats(getBPEMetrics(mergeTable, text, bpeConfig)),
     );
     expect(stableStats(comparison.wordpiece)).toEqual(
-      stableStats(getWordPieceMetrics(model, text, wordPieceConfig)),
+      stableStats(getWordPieceMetrics(sampleWordPieceModel, text, wordPieceConfig)),
     );
   });
 
@@ -52,13 +51,13 @@ describe("compareTokenizer", () => {
     const text = "hello world";
     const { mergeTable } = train(text, 270);
     const bpeInput = { mergeTable };
-    const wordPieceInput = { model };
+    const wordPieceInput = { model: sampleWordPieceModel };
 
     const defaultComparison = compareTokenizer(text, bpeInput, wordPieceInput);
     const explicitDefaultComparison = compareTokenizer(
       text,
       { mergeTable, normalizationConfig: DEFAULT_NORMALIZATION_CONFIG },
-      { model, normalizationConfig: DEFAULT_NORMALIZATION_CONFIG },
+      { model: sampleWordPieceModel, normalizationConfig: DEFAULT_NORMALIZATION_CONFIG },
     );
 
     expect("normalizationConfig" in bpeInput).toBe(false);

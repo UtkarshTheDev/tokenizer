@@ -2,17 +2,15 @@ import {
   BaseVocabSize,
   decode as decodeBPE,
   encode as encodeBPE,
+  encodeWordPiece,
+  decodeWordPiece,
   type MergeTable,
-} from "../bpe/tokenizer";
+  type WordPieceModel,
+} from "@tokenizer/models";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
-} from "../Normalizer";
-import type { WordPieceModel } from "../wordpiece/types";
-import {
-  encode as encodeWordPiece,
-  decode as decodeWordPiece,
-} from "../wordpiece/tokenizer";
+} from "@tokenizer/core";
 import { DEFAULT_TEXT } from "./defaultText";
 
 export interface TokenizerStats {

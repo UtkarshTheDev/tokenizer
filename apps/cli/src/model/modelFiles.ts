@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { WordPieceSerializedModel } from "../wordpiece/types";
-import type { BpeSerializedModel } from "../bpe/serializer";
+import type { WordPieceSerializedModel } from "@tokenizer/models";
+import type { BpeSerializedModel } from "@tokenizer/models";
 
 export type TokenizerKind = "bpe" | "wordpiece";
 export type ModelFileAction = "save" | "load";

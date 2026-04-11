@@ -3,7 +3,7 @@ import {
   DEFAULT_NORMALIZATION_CONFIG,
   normalizeText,
   type NormalizationConfig,
-} from "./Normalizer";
+} from "./normalizer";
 
 describe("normalizeText", () => {
   test("uses the default normalization config", () => {

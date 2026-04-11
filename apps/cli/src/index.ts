@@ -9,33 +9,29 @@ import {
   readJsonFile,
   type ModelFileAction,
   type TokenizerKind,
-} from "./cli/modelFiles";
+} from "./model/modelFiles";
 import {
   loadBpeModel,
   loadWordPieceModel,
   saveBpeModel,
   saveWordPieceModel,
-} from "./cli/modelPersistence";
+} from "./model/modelPersistence";
 import {
   train,
   encode,
   decode,
   type MergeTable,
   BaseVocabSize,
-} from "./bpe/tokenizer";
-import {
-  train as trainWordPiece,
-  encode as encodeWordPiece,
-  decode as decodeWordPiece,
-} from "./wordpiece/tokenizer";
-import type { WordPieceModel } from "./wordpiece/types";
+  trainWordPiece,
+  encodeWordPiece,
+  decodeWordPiece,
+  type WordPieceModel,
+} from "@tokenizer/models";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
-} from "./Normalizer";
-import { compareTokenizer } from "./eval/compare";
-import { DEFAULT_TEXT } from "./eval/defaultText";
-import type { TokenizerStats } from "./eval/metrics";
+} from "@tokenizer/core";
+import { compareTokenizer, DEFAULT_TEXT, type TokenizerStats } from "@tokenizer/evaluation";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -142,7 +138,7 @@ const printMenu = () => {
   );
   console.log(`1. Select tokenizer (BPE / WordPiece)`);
   console.log(`2. Train on text (type directly)`);
-  console.log(`3. Train on file (data/data.txt)`);
+  console.log(`3. Train on file (examples/data/corpus.txt)`);
   console.log(`4. Encode text`);
   console.log(`5. Decode tokens`);
   console.log(`6. Save Tokenizer `);
@@ -454,7 +450,14 @@ async function main() {
         break;
       }
       case "train_file": {
-        const dataPath = path.resolve(__dirname, "data", "data.txt");
+        // Resolve relative to the repo root (two levels up from apps/cli/src/)
+        const dataPath = path.resolve(
+          import.meta.dir,
+          "../../../..",
+          "examples",
+          "data",
+          "corpus.txt",
+        );
         if (!fs.existsSync(dataPath)) {
           console.log(`❌ Could not find file: ${dataPath}`);
           break;
@@ -509,7 +512,7 @@ async function main() {
           "Enter comma-separated token IDs (e.g. 104, 256, 111): ",
         );
         try {
-          const cleanStr = tokenStr.replace(/['"\[\]]/g, "");
+          const cleanStr = tokenStr.replace(/['"[\]]/g, "");
           const tokens = cleanStr
             .split(",")
             .map((s) => parseInt(s.trim(), 10))
@@ -590,7 +593,7 @@ async function main() {
               break;
             }
             saveWordPieceModel(
-              __dirname,
+              import.meta.dir,
               location,
               wordPieceSlot.model,
               wordPieceSlot.normalizationConfig,
@@ -603,7 +606,7 @@ async function main() {
               break;
             }
             saveBpeModel(
-              __dirname,
+              import.meta.dir,
               location,
               bpeSlot.mergeTable,
               bpeSlot.normalizationConfig,
@@ -622,7 +625,7 @@ async function main() {
       case "load_tokenizer": {
         try {
           const location = await askModelLocation("load");
-          const parse = readJsonFile(__dirname, location);
+          const parse = readJsonFile(import.meta.dir, location);
           if (parse === null) {
             throw new Error("Failed to load or parse the JSON file.");
           }

@@ -1,9 +1,9 @@
-import type { MergeTable } from "../bpe/tokenizer";
+import type { MergeTable } from "@tokenizer/models";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
-} from "../Normalizer";
-import type { WordPieceModel } from "../wordpiece/types";
+} from "@tokenizer/core";
+import type { WordPieceModel } from "@tokenizer/models";
 import {
   getBPEMetrics,
   getWordPieceMetrics,

@@ -1,8 +1,13 @@
 import { describe, expect, it } from "bun:test";
-import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
-import { BaseVocabSize, encode as encodeBPE, train } from "../bpe/tokenizer";
-import { encode as encodeWordPiece } from "../wordpiece/tokenizer";
-import { model, type WordPieceModel } from "../wordpiece/types";
+import { DEFAULT_NORMALIZATION_CONFIG } from "@tokenizer/core";
+import {
+  BaseVocabSize,
+  encode as encodeBPE,
+  train,
+  encodeWordPiece,
+  sampleWordPieceModel,
+  type WordPieceModel,
+} from "@tokenizer/models";
 import { getBPEMetrics, getWordPieceMetrics } from "./metrics";
 
 describe("evaluation metrics", () => {
@@ -32,17 +37,17 @@ describe("evaluation metrics", () => {
 
   it("computes WordPiece unknown-token metrics from the model unk token", () => {
     const text = "hello unknown world";
-    const tokens = encodeWordPiece(text, model, DEFAULT_NORMALIZATION_CONFIG);
-    const unkTokenId = model.tokenToId.get(model.unkToken);
+    const tokens = encodeWordPiece(text, sampleWordPieceModel, DEFAULT_NORMALIZATION_CONFIG);
+    const unkTokenId = sampleWordPieceModel.tokenToId.get(sampleWordPieceModel.unkToken);
     const unknownTokenCount = tokens.filter((token) => token === unkTokenId).length;
 
     const stats = getWordPieceMetrics(
-      model,
+      sampleWordPieceModel,
       text,
       DEFAULT_NORMALIZATION_CONFIG,
     );
 
-    expect(stats.vocabSize).toBe(model.idToToken.length);
+    expect(stats.vocabSize).toBe(sampleWordPieceModel.idToToken.length);
     expect(stats.tokenCount).toBe(tokens.length);
     expect(stats.uniqueTokenCount).toBe(new Set(tokens).size);
     expect(stats.unknownTokenCount).toBe(unknownTokenCount);
@@ -53,7 +58,7 @@ describe("evaluation metrics", () => {
 
   it("returns zero ratios for empty input instead of NaN or Infinity", () => {
     const bpeStats = getBPEMetrics([], "");
-    const wordPieceStats = getWordPieceMetrics(model, "");
+    const wordPieceStats = getWordPieceMetrics(sampleWordPieceModel, "");
 
     expect(bpeStats.tokenCount).toBe(0);
     expect(bpeStats.compressionRatio).toBe(0);

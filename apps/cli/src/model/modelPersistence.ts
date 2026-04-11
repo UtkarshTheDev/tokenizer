@@ -2,12 +2,12 @@ import { isBpeSerializedModel, writeJsonFile } from "./modelFiles";
 import {
   deserializeWordpieceModel,
   serializeWordpieceModel,
-} from "../wordpiece/serializer";
-import type { WordPieceModel } from "../wordpiece/types";
+} from "@tokenizer/models";
+import type { WordPieceModel } from "@tokenizer/models";
 import { isWordPieceSerializedModel } from "./modelFiles";
-import { deserializeBpeModel, serializeBpeModel } from "../bpe/serializer";
-import type { MergeTable } from "../bpe/tokenizer";
-import type { NormalizationConfig } from "../Normalizer";
+import { deserializeBpeModel, serializeBpeModel } from "@tokenizer/models";
+import type { MergeTable } from "@tokenizer/models";
+import type { NormalizationConfig } from "@tokenizer/core";
 
 export const saveWordPieceModel = (
   baseDir: string,
