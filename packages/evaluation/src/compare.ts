@@ -1,9 +1,8 @@
-import type { MergeTable } from "@tokenizer/models";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
 } from "@tokenizer/core";
-import type { WordPieceModel } from "@tokenizer/models";
+import type { MergeTable, WordPieceModel } from "@tokenizer/models";
 import {
   getBPEMetrics,
   getWordPieceMetrics,
@@ -31,7 +30,7 @@ interface WordpieceInput {
 export const compareTokenizer = (
   text: string,
   bpe: BpeInput,
-  wordpiece: WordpieceInput,
+  wordpiece: WordpieceInput
 ): CompareStats => {
   // Each tokenizer can have its own normalization settings. Keeping these
   // separate avoids the bug where loading/evaluating one tokenizer accidentally
@@ -41,15 +40,11 @@ export const compareTokenizer = (
   const wordPieceNormalizationConfig =
     wordpiece.normalizationConfig ?? DEFAULT_NORMALIZATION_CONFIG;
 
-  const bpeStats = getBPEMetrics(
-    bpe.mergeTable,
-    text,
-    bpeNormalizationConfig,
-  );
+  const bpeStats = getBPEMetrics(bpe.mergeTable, text, bpeNormalizationConfig);
   const wordpieceStats = getWordPieceMetrics(
     wordpiece.model,
     text,
-    wordPieceNormalizationConfig,
+    wordPieceNormalizationConfig
   );
 
   return { bpe: bpeStats, wordpiece: wordpieceStats };
