@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
 import { BaseVocabSize, encode as encodeBPE, train } from "../bpe/tokenizer";
 import { encode as encodeWordPiece } from "../wordpiece/tokenizer";
-import { model } from "../wordpiece/types";
+import { model, type WordPieceModel } from "../wordpiece/types";
 import { getBPEMetrics, getWordPieceMetrics } from "./metrics";
 
 describe("evaluation metrics", () => {
@@ -64,5 +64,17 @@ describe("evaluation metrics", () => {
     expect(wordPieceStats.compressionRatio).toBe(0);
     expect(wordPieceStats.reductionPercent).toBe(0);
     expect(wordPieceStats.avgCharsPerToken).toBe(0);
+  });
+
+  it("throws when the WordPiece unk token is missing from the vocabulary map", () => {
+    const brokenModel: WordPieceModel = {
+      tokenToId: new Map([["hello", 1]]),
+      idToToken: ["[UNK]", "hello"],
+      unkToken: "[UNK]",
+    };
+
+    expect(() => getWordPieceMetrics(brokenModel, "hello")).toThrow(
+      'Invalid WordPiece model: unkToken "[UNK]" is missing from tokenToId vocabulary.',
+    );
   });
 });

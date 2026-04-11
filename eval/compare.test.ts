@@ -3,7 +3,11 @@ import { train } from "../bpe/tokenizer";
 import { DEFAULT_NORMALIZATION_CONFIG } from "../Normalizer";
 import { model } from "../wordpiece/types";
 import { compareTokenizer } from "./compare";
-import { getBPEMetrics, getWordPieceMetrics, type TokenizerStats } from "./metrics";
+import {
+  getBPEMetrics,
+  getWordPieceMetrics,
+  type TokenizerStats,
+} from "./metrics";
 
 const stableStats = (stats: TokenizerStats) => ({
   vocabSize: stats.vocabSize,
@@ -50,9 +54,20 @@ describe("compareTokenizer", () => {
     const bpeInput = { mergeTable };
     const wordPieceInput = { model };
 
-    compareTokenizer(text, bpeInput, wordPieceInput);
+    const defaultComparison = compareTokenizer(text, bpeInput, wordPieceInput);
+    const explicitDefaultComparison = compareTokenizer(
+      text,
+      { mergeTable, normalizationConfig: DEFAULT_NORMALIZATION_CONFIG },
+      { model, normalizationConfig: DEFAULT_NORMALIZATION_CONFIG },
+    );
 
     expect("normalizationConfig" in bpeInput).toBe(false);
     expect("normalizationConfig" in wordPieceInput).toBe(false);
+    expect(stableStats(defaultComparison.bpe)).toEqual(
+      stableStats(explicitDefaultComparison.bpe),
+    );
+    expect(stableStats(defaultComparison.wordpiece)).toEqual(
+      stableStats(explicitDefaultComparison.wordpiece),
+    );
   });
 });

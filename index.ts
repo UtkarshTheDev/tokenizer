@@ -319,6 +319,43 @@ const printComparisonReport = (
   );
 };
 
+const getNormalizationConfigDifferences = (
+  bpeConfig: NormalizationConfig,
+  wordPieceConfig: NormalizationConfig,
+): string[] => {
+  const fields: Array<keyof NormalizationConfig> = [
+    "unicodeForm",
+    "stripAccents",
+    "lowercase",
+    "collapseWhitespace",
+    "trimWhitespace",
+  ];
+
+  return fields
+    .filter((field) => bpeConfig[field] !== wordPieceConfig[field])
+    .map(
+      (field) =>
+        `${field}: BPE=${String(bpeConfig[field])}, WordPiece=${String(wordPieceConfig[field])}`,
+    );
+};
+
+const warnIfNormalizationConfigsDiffer = () => {
+  const differences = getNormalizationConfigDifferences(
+    bpeSlot.normalizationConfig,
+    wordPieceSlot.normalizationConfig,
+  );
+
+  if (differences.length === 0) return;
+
+  console.log("\n⚠️  Normalization configs differ between tokenizers.");
+  console.log(
+    "   Token counts, compression, and WordPiece [UNK] rate may be affected by preprocessing differences.",
+  );
+  for (const difference of differences) {
+    console.log(`   - ${difference}`);
+  }
+};
+
 /**
  * Runs the interactive CLI loop for training, encoding, decoding, saving, loading, and viewing stats for BPE and WordPiece tokenizers.
  *
@@ -500,6 +537,7 @@ async function main() {
           "Enter text to compare (press Enter for default evaluation text): ",
         );
         const text = rawText.trim().length === 0 ? DEFAULT_TEXT : rawText;
+        warnIfNormalizationConfigsDiffer();
         // compareTokenizer is the pure evaluation layer. The CLI passes each
         // tokenizer slot's own normalization config so the comparison reflects
         // how that model was trained or loaded.

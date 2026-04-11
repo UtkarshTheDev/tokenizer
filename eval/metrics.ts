@@ -29,6 +29,34 @@ export interface TokenizerStats {
   avgCharsPerToken: number;
 }
 
+interface DerivedMetrics {
+  compressionRatio: number;
+  reductionPercent: number;
+  uniqueTokenCount: number;
+  avgCharsPerToken: number;
+}
+
+const computeDerivedMetrics = (text: string, tokens: number[]): DerivedMetrics => {
+  const tokenCount = tokens.length;
+  const originalBytes = Buffer.from(text, "utf-8").length;
+
+  if (tokenCount === 0 || originalBytes === 0) {
+    return {
+      compressionRatio: 0,
+      reductionPercent: 0,
+      uniqueTokenCount: 0,
+      avgCharsPerToken: 0,
+    };
+  }
+
+  return {
+    compressionRatio: originalBytes / tokenCount,
+    reductionPercent: ((originalBytes - tokenCount) / originalBytes) * 100,
+    uniqueTokenCount: new Set(tokens).size,
+    avgCharsPerToken: text.length / tokenCount,
+  };
+};
+
 /**
  * Measure how a trained BPE model behaves on one piece of text.
  *
@@ -43,11 +71,6 @@ export const getBPEMetrics = (
 ): TokenizerStats => {
   const unknownTokenCount = 0;
   const unknownTokenRate = 0;
-
-  let compressionRatio = 0;
-  let reductionPercent = 0;
-  let avgCharsPerToken = 0;
-  let uniqueTokenCount = 0;
 
   // BPE starts with 256 byte tokens, then adds one vocabulary entry per merge.
   const vocabSize = BaseVocabSize + mergeTable.length;
@@ -69,19 +92,12 @@ export const getBPEMetrics = (
   // JavaScript string length counts UTF-16 code units, which can be misleading
   // for Unicode text.
   const bytesCount = Buffer.from(text, "utf-8").length;
-
-  if (tokenCount !== 0 && bytesCount !== 0) {
-    // In this project, "compression ratio" means bytes represented per token.
-    // Higher usually means the tokenizer produced fewer tokens for the input.
-    compressionRatio = bytesCount / tokenCount;
-    reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
-    avgCharsPerToken = text.length / tokenCount;
-
-    // Unique token count shows how many distinct token IDs were used.
-    // It is tokenizer-agnostic, so the same logic works for BPE and WordPiece.
-    const tokenSet = new Set(tokens);
-    uniqueTokenCount = tokenSet.size;
-  }
+  const {
+    compressionRatio,
+    reductionPercent,
+    uniqueTokenCount,
+    avgCharsPerToken,
+  } = computeDerivedMetrics(text, tokens);
   const stats = {
     vocabSize,
     originalBytes: bytesCount,
@@ -109,10 +125,6 @@ export const getWordPieceMetrics = (
   text: string = DEFAULT_TEXT,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
 ): TokenizerStats => {
-  let compressionRatio = 0;
-  let reductionPercent = 0;
-  let avgCharsPerToken = 0;
-  let uniqueTokenCount = 0;
   let unknownTokenRate = 0;
   let unknownTokenCount = 0;
 
@@ -130,17 +142,22 @@ export const getWordPieceMetrics = (
 
   const tokenCount = tokens.length;
   const bytesCount = Buffer.from(text, "utf-8").length;
+  const {
+    compressionRatio,
+    reductionPercent,
+    uniqueTokenCount,
+    avgCharsPerToken,
+  } = computeDerivedMetrics(text, tokens);
 
-  if (tokenCount !== 0 && bytesCount !== 0) {
-    compressionRatio = bytesCount / tokenCount;
-    reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
-    avgCharsPerToken = text.length / tokenCount;
+  // Do not assume `[UNK]` is always ID 0. The model owns that mapping.
+  const unkTokenID = model.tokenToId.get(model.unkToken);
+  if (unkTokenID === undefined) {
+    throw new Error(
+      `Invalid WordPiece model: unkToken "${model.unkToken}" is missing from tokenToId vocabulary.`,
+    );
+  }
 
-    const tokenSet = new Set(tokens);
-    uniqueTokenCount = tokenSet.size;
-    // Do not assume `[UNK]` is always ID 0. The model owns that mapping.
-    const unkTokenID = model.tokenToId.get(model.unkToken);
-    unknownTokenCount = 0;
+  if (tokenCount !== 0) {
     for (const token of tokens) {
       if (token === unkTokenID) unknownTokenCount++;
     }
