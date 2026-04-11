@@ -349,7 +349,7 @@ const warnIfNormalizationConfigsDiffer = () => {
 
   console.log("\n⚠️  Normalization configs differ between tokenizers.");
   console.log(
-    "   Token counts, compression, and WordPiece [UNK] rate may be affected by preprocessing differences.",
+    `   Token counts, compression, and WordPiece ${wordPieceSlot.model?.unkToken ?? "[UNK]"} rate may be affected by preprocessing differences.`,
   );
   for (const difference of differences) {
     console.log(`   - ${difference}`);
@@ -536,7 +536,7 @@ async function main() {
         const rawText = await rl.question(
           "Enter text to compare (press Enter for default evaluation text): ",
         );
-        const text = rawText.trim().length === 0 ? DEFAULT_TEXT : rawText;
+        const text = rawText.length === 0 ? DEFAULT_TEXT : rawText;
         warnIfNormalizationConfigsDiffer();
         // compareTokenizer is the pure evaluation layer. The CLI passes each
         // tokenizer slot's own normalization config so the comparison reflects
