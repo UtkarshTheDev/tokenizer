@@ -259,7 +259,7 @@ const printComparisonReport = (
   // This report is intentionally compact: enough numbers to compare behavior,
   // but not so much output that a beginner cannot tell what matters.
   console.log("\n╔══════════════════════════════════════════════════════╗");
-  console.log("║              TOKENIZER COMPARISON REPORT            ║");
+  console.log("║              TOKENIZER COMPARISON REPORT             ║");
   console.log("╚══════════════════════════════════════════════════════╝\n");
 
   console.log("── Input ──────────────────────────────────────────────");
@@ -583,8 +583,7 @@ async function main() {
             currentVocabSize = BaseVocabSize + loadedModel.mergeTable.length;
           } else if (type === "wordpiece") {
             const loadedModel = loadWordPieceModel(parse);
-            wordPieceSlot.normalizationConfig =
-              loadedModel.normalizationConfig;
+            wordPieceSlot.normalizationConfig = loadedModel.normalizationConfig;
             wordPieceSlot.model = loadedModel.model;
             currentVocabSize = loadedModel.model.idToToken.length;
           }
