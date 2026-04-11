@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
-  normalizeText,
   type NormalizationConfig,
-} from "./normalizer";
+  normalizeText,
+} from "./index";
 
 describe("normalizeText", () => {
   test("uses the default normalization config", () => {
@@ -40,7 +40,7 @@ describe("normalizeText", () => {
     const decomposed = "cafe\u0301";
 
     expect(normalizeText(composed, config)).toBe(
-      normalizeText(decomposed, config),
+      normalizeText(decomposed, config)
     );
   });
 
@@ -54,7 +54,7 @@ describe("normalizeText", () => {
     };
 
     expect(normalizeText("\uFF28\uFF25\uFF2C\uFF2C\uFF2F", config)).toBe(
-      "hello",
+      "hello"
     );
   });
 
@@ -68,7 +68,7 @@ describe("normalizeText", () => {
     };
 
     expect(normalizeText("café naïve résumé", config)).toBe(
-      "cafe naive resume",
+      "cafe naive resume"
     );
   });
 
@@ -82,7 +82,7 @@ describe("normalizeText", () => {
     };
 
     expect(normalizeText("café naïve résumé", config)).toBe(
-      "café naïve résumé",
+      "café naïve résumé"
     );
   });
 
