@@ -1,4 +1,8 @@
-import { decodeBPE, encodeBPE, type MergeTable } from "../bpe/tokenizer";
+import {
+  decode as decodeBPE,
+  encode as encodeBPE,
+  type MergeTable,
+} from "../bpe/tokenizer";
 import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
