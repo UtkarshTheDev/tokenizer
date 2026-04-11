@@ -1,7 +1,9 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import type { WordPieceSerializedModel } from "@tokenizer/models";
-import type { BpeSerializedModel } from "@tokenizer/models";
+import fs from "node:fs";
+import path from "node:path";
+import type {
+  BpeSerializedModel,
+  WordPieceSerializedModel,
+} from "@tokenizer/models";
 
 export type TokenizerKind = "bpe" | "wordpiece";
 export type ModelFileAction = "save" | "load";
@@ -14,7 +16,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 
 export const buildModelLocation = (
   tokenizer: TokenizerKind,
-  rawInput: string,
+  rawInput: string
 ): string => {
   // Save/load always lives inside the local models directory. We normalize the
   // user's input so pressing Enter gets a sensible default file name.
@@ -36,13 +38,13 @@ export const buildModelLocation = (
   // segments so users cannot accidentally write outside the models folder.
   if (hasPathTraversal) {
     throw new Error(
-      "Path traversal is not allowed. Please use a simple file name.",
+      "Path traversal is not allowed. Please use a simple file name."
     );
   }
 
   if (hasDirectorySeparators) {
     throw new Error(
-      "Please use only a file name like wordpiece.json, not directories.",
+      "Please use only a file name like wordpiece.json, not directories."
     );
   }
 
@@ -51,7 +53,7 @@ export const buildModelLocation = (
 
 export const getModelFilePrompt = (
   tokenizer: TokenizerKind,
-  action: ModelFileAction,
+  action: ModelFileAction
 ): string => {
   if (action === "load") {
     return `Enter the filename to load from models/ (default: ${tokenizer}.json): `;
@@ -74,11 +76,11 @@ export const parseJsonFile = (filePath: string): unknown | null => {
 export const writeJsonFile = (
   baseDir: string,
   location: string,
-  data: unknown,
+  data: unknown
 ): string => {
   if (path.isAbsolute(location)) {
     throw new Error(
-      "Model file location must be relative to the project models directory.",
+      "Model file location must be relative to the project models directory."
     );
   }
 
@@ -90,53 +92,60 @@ export const writeJsonFile = (
 
 export const readJsonFile = (
   baseDir: string,
-  location: string,
+  location: string
 ): unknown | null => {
   const filePath = path.resolve(baseDir, location);
   return parseJsonFile(filePath);
 };
 
 export const isWordPieceSerializedModel = (
-  value: unknown,
+  value: unknown
 ): value is WordPieceSerializedModel => {
-  if (!isRecord(value)) return false;
+  if (!isRecord(value)) {
+    return false;
+  }
 
   // A runtime guard narrows unknown JSON to the specific saved shape we expect.
   return (
-    value["type"] === "wordpiece" &&
-    Array.isArray(value["idToToken"]) &&
-    value["idToToken"].every((item) => typeof item === "string") &&
-    value["continuationPrefix"] === "##" &&
-    typeof value["unkToken"] === "string"
+    value.type === "wordpiece" &&
+    Array.isArray(value.idToToken) &&
+    value.idToToken.every((item) => typeof item === "string") &&
+    value.continuationPrefix === "##" &&
+    typeof value.unkToken === "string"
   );
 };
 
 export const isBpeSerializedModel = (
-  value: unknown,
+  value: unknown
 ): value is BpeSerializedModel => {
-  if (!isRecord(value)) return false;
+  if (!isRecord(value)) {
+    return false;
+  }
 
   // Each merge entry must stay a two-number tuple: [pairKey, newToken].
   return (
-    value["type"] === "bpe" &&
-    Array.isArray(value["mergeTable"]) &&
-    value["mergeTable"].every(
+    value.type === "bpe" &&
+    Array.isArray(value.mergeTable) &&
+    value.mergeTable.every(
       (item) =>
         Array.isArray(item) &&
         item.length === 2 &&
-        item.every((num) => Number.isSafeInteger(num) && num >= 0),
+        item.every((num) => Number.isSafeInteger(num) && num >= 0)
     ) &&
-    value["baseVocabSize"] === 256 &&
-    typeof value["version"] === "number"
+    value.baseVocabSize === 256 &&
+    typeof value.version === "number"
   );
 };
 
 export const parseModelType = (value: unknown): TokenizerKind | undefined => {
-  if (!isRecord(value)) return undefined;
+  if (!isRecord(value)) {
+    return undefined;
+  }
 
-  if (value["type"] === "bpe") {
+  if (value.type === "bpe") {
     return "bpe";
-  } else if (value["type"] === "wordpiece") {
+  }
+  if (value.type === "wordpiece") {
     return "wordpiece";
   }
   return undefined;

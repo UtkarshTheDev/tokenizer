@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { buildModelLocation, parseModelType, writeJsonFile } from "./modelFiles";
+import {
+  buildModelLocation,
+  parseModelType,
+  writeJsonFile,
+} from "./model-files";
 
 describe("model file helpers", () => {
   it("uses the active tokenizer default file on empty input", () => {
@@ -9,7 +13,7 @@ describe("model file helpers", () => {
 
   it("adds a json extension when missing", () => {
     expect(buildModelLocation("wordpiece", "custom-model")).toBe(
-      "models/custom-model.json",
+      "models/custom-model.json"
     );
   });
 
@@ -29,7 +33,7 @@ describe("model file helpers", () => {
 
   it("rejects absolute paths when writing JSON files", () => {
     expect(() =>
-      writeJsonFile("/tmp", "/tmp/escape.json", { ok: true }),
+      writeJsonFile("/tmp", "/tmp/escape.json", { ok: true })
     ).toThrow("relative");
   });
 });
