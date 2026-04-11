@@ -1,4 +1,5 @@
 import {
+  BaseVocabSize,
   decode as decodeBPE,
   encode as encodeBPE,
   type MergeTable,
@@ -12,8 +13,9 @@ import {
   encode as encodeWordPiece,
   decode as decodeWordPiece,
 } from "../wordpiece/tokenizer";
+import { DEFAULT_TEXT } from "./defaultText";
 
-export interface TOKENIZERSTATS {
+export interface TokenizerStats {
   vocabSize: number;
   originalBytes: number;
   tokenCount: number;
@@ -27,28 +29,20 @@ export interface TOKENIZERSTATS {
   avgCharsPerToken: number;
 }
 
-export const DEFAULT_TEXT = `Hello, world! Tokenizers should handle repeated words, punctuation, and spacing well.
-
- I was playing, replaying, and tokenizing text on April 10, 2026 at 10:30 AM.
- Email-like text: test.user+demo@example.com
- URL-like text: https://example.com/tokenizer-demo
-
- Numbers: 42, 3.14159, 1,000,000
- Mixed case: HELLO hello HeLLo
- Unicode: café, naïve, résumé
- Whitespace:   this    line	has extra spaces.
-
- Unknown-ish words: xqztr, neurotokenization, hyper-efficient`;
-
 export const getBPEMetrics = (
   mergeTable: MergeTable,
   text: string = DEFAULT_TEXT,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
-): TOKENIZERSTATS => {
+): TokenizerStats => {
   const unknownTokenCount = 0;
   const unknownTokenRate = 0;
 
-  const vocabSize = mergeTable.length;
+  let compressionRatio = 0;
+  let reductionPercent = 0;
+  let avgCharsPerToken = 0;
+  let uniqueTokenCount = 0;
+
+  const vocabSize = BaseVocabSize + mergeTable.length;
 
   const encodeStart = performance.now();
   const tokens = encodeBPE(text, mergeTable, normalizationConfig);
@@ -63,13 +57,14 @@ export const getBPEMetrics = (
   const tokenCount = tokens.length;
   const bytesCount = Buffer.from(text, "utf-8").length;
 
-  const compressionRatio = bytesCount / tokenCount;
-  const reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
-  const avgCharsPerToken = text.length / tokenCount;
+  if (tokenCount !== 0 || bytesCount !== 0) {
+    compressionRatio = bytesCount / tokenCount;
+    reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
+    avgCharsPerToken = text.length / tokenCount;
 
-  const tokenSet = new Set(tokens);
-  const uniqueTokenCount = tokenSet.size;
-
+    const tokenSet = new Set(tokens);
+    uniqueTokenCount = tokenSet.size;
+  }
   const stats = {
     vocabSize,
     originalBytes: bytesCount,
@@ -90,7 +85,14 @@ export const getWordPieceMetrics = (
   model: WordPieceModel,
   text: string = DEFAULT_TEXT,
   normalizationConfig: NormalizationConfig = DEFAULT_NORMALIZATION_CONFIG,
-): TOKENIZERSTATS => {
+): TokenizerStats => {
+  let compressionRatio = 0;
+  let reductionPercent = 0;
+  let avgCharsPerToken = 0;
+  let uniqueTokenCount = 0;
+  let unknownTokenRate = 0;
+  let unknownTokenCount = 0;
+
   const vocabSize = model.idToToken.length;
 
   const encodeStart = performance.now();
@@ -106,18 +108,20 @@ export const getWordPieceMetrics = (
   const tokenCount = tokens.length;
   const bytesCount = Buffer.from(text, "utf-8").length;
 
-  const compressionRatio = bytesCount / tokenCount;
-  const reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
-  const avgCharsPerToken = text.length / tokenCount;
+  if (tokenCount !== 0 || bytesCount !== 0) {
+    compressionRatio = bytesCount / tokenCount;
+    reductionPercent = ((bytesCount - tokenCount) / bytesCount) * 100;
+    avgCharsPerToken = text.length / tokenCount;
 
-  const tokenSet = new Set(tokens);
-  const uniqueTokenCount = tokenSet.size;
-
-  let unknownTokenCount = 0;
-  for (const token of tokens) {
-    if (token === 0) unknownTokenCount++;
+    const tokenSet = new Set(tokens);
+    uniqueTokenCount = tokenSet.size;
+    const unkTokenID = model.tokenToId.get(model.unkToken);
+    unknownTokenCount = 0;
+    for (const token of tokens) {
+      if (token === unkTokenID) unknownTokenCount++;
+    }
+    unknownTokenRate = unknownTokenCount / tokenCount;
   }
-  const unknownTokenRate = uniqueTokenCount / tokenCount;
 
   const stats = {
     vocabSize,
