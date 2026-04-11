@@ -33,6 +33,9 @@ import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
 } from "./Normalizer";
+import { compareTokenizer } from "./eval/compare";
+import { DEFAULT_TEXT } from "./eval/defaultText";
+import type { TokenizerStats } from "./eval/metrics";
 
 // Readline interface for interactive CLI
 const rl = readline.createInterface({ input, output });
@@ -104,6 +107,11 @@ const getAction = (input: string) => {
     case "8":
     case "stats":
       return "stats";
+    case "9":
+    case "compare":
+    case "eval":
+    case "evaluate":
+      return "compare";
     case "clear":
       return "clear";
     case "exit":
@@ -135,10 +143,11 @@ const printMenu = () => {
   console.log(`6. Save Tokenizer `);
   console.log(`7. Load Tokenizer `);
   console.log(`8. Show training stats`);
+  console.log(`9. Compare BPE vs WordPiece`);
   console.log(`clear -> clear screen`);
   console.log(`exit -> exit\n`);
   console.log(
-    `Commands: bpe, wordpiece, train, data, encode, decode, stats,save,load clear, exit\n`,
+    `Commands: bpe, wordpiece, train, data, encode, decode, stats, save, load, compare, clear, exit\n`,
   );
 };
 
@@ -224,6 +233,85 @@ const handleTrain = async (text: string) => {
 
   console.log(
     `✅ Training complete in ${timeMs} ms. Built WordPiece vocab with ${model.idToToken.length} tokens.`,
+  );
+};
+
+const formatNumber = (value: number, decimals = 2): string =>
+  value.toFixed(decimals);
+
+const printMetricRow = (
+  label: string,
+  bpeValue: string | number,
+  wordPieceValue: string | number,
+) => {
+  console.log(
+    `  ${label.padEnd(22)} ${String(bpeValue).padStart(14)} ${String(wordPieceValue).padStart(14)}`,
+  );
+};
+
+const printComparisonReport = (
+  text: string,
+  bpeStats: TokenizerStats,
+  wordPieceStats: TokenizerStats,
+) => {
+  console.log("\n╔══════════════════════════════════════════════════════╗");
+  console.log("║              TOKENIZER COMPARISON REPORT            ║");
+  console.log("╚══════════════════════════════════════════════════════╝\n");
+
+  console.log("── Input ──────────────────────────────────────────────");
+  console.log(`  Characters            : ${text.length}`);
+  console.log(`  UTF-8 bytes           : ${Buffer.from(text, "utf-8").length}`);
+
+  console.log("\n── Results ────────────────────────────────────────────");
+  console.log(
+    `  ${"Metric".padEnd(22)} ${"BPE".padStart(14)} ${"WordPiece".padStart(14)}`,
+  );
+  console.log(`  ${"-".repeat(22)} ${"-".repeat(14)} ${"-".repeat(14)}`);
+  printMetricRow("Vocab size", bpeStats.vocabSize, wordPieceStats.vocabSize);
+  printMetricRow("Token count", bpeStats.tokenCount, wordPieceStats.tokenCount);
+  printMetricRow(
+    "Unique tokens",
+    bpeStats.uniqueTokenCount,
+    wordPieceStats.uniqueTokenCount,
+  );
+  printMetricRow(
+    "Compression",
+    `${formatNumber(bpeStats.compressionRatio)}x`,
+    `${formatNumber(wordPieceStats.compressionRatio)}x`,
+  );
+  printMetricRow(
+    "Reduction",
+    `${formatNumber(bpeStats.reductionPercent)}%`,
+    `${formatNumber(wordPieceStats.reductionPercent)}%`,
+  );
+  printMetricRow(
+    "Avg chars/token",
+    formatNumber(bpeStats.avgCharsPerToken),
+    formatNumber(wordPieceStats.avgCharsPerToken),
+  );
+  printMetricRow(
+    "Encode time",
+    `${formatNumber(bpeStats.encodeTime, 3)}ms`,
+    `${formatNumber(wordPieceStats.encodeTime, 3)}ms`,
+  );
+  printMetricRow(
+    "Decode time",
+    `${formatNumber(bpeStats.decodeTime, 3)}ms`,
+    `${formatNumber(wordPieceStats.decodeTime, 3)}ms`,
+  );
+  printMetricRow(
+    "Unknown tokens",
+    bpeStats.unknownTokenCount,
+    wordPieceStats.unknownTokenCount,
+  );
+  printMetricRow(
+    "Unknown rate",
+    `${formatNumber(bpeStats.unknownTokenRate * 100)}%`,
+    `${formatNumber(wordPieceStats.unknownTokenRate * 100)}%`,
+  );
+
+  console.log(
+    "\nNote: compression is measured as original UTF-8 bytes per produced token.",
   );
 };
 
@@ -392,6 +480,33 @@ async function main() {
         console.log(
           `  Space saved         : ${currentTrainingStats.spaceSaved}%`,
         );
+        break;
+      }
+      case "compare": {
+        if (bpeSlot.mergeTable === null || wordPieceSlot.model === null) {
+          console.log(
+            "❌ Train or load both BPE and WordPiece models before comparing.",
+          );
+          break;
+        }
+
+        const rawText = await rl.question(
+          "Enter text to compare (press Enter for default evaluation text): ",
+        );
+        const text = rawText.trim().length === 0 ? DEFAULT_TEXT : rawText;
+        const comparison = compareTokenizer(
+          text,
+          {
+            mergeTable: bpeSlot.mergeTable,
+            normalizationConfig: bpeSlot.normalizationConfig,
+          },
+          {
+            model: wordPieceSlot.model,
+            normalizationConfig: wordPieceSlot.normalizationConfig,
+          },
+        );
+
+        printComparisonReport(text, comparison.bpe, comparison.wordpiece);
         break;
       }
       case "save_tokenizer": {
