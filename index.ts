@@ -329,7 +329,7 @@ const printComparisonReport = (
 const printTrainingStats = (stats: TrainingStats) => {
   console.log("\n╔══════════════════════════════════════════╗");
   console.log(
-    `║   ${stats.tokenizer.toUpperCase().padEnd(11)} TOKENIZER — SUMMARY   ║`,
+    `║   ${stats.tokenizer.toUpperCase().padEnd(16)} TOKENIZER — SUMMARY   ║`,
   );
   console.log("╚══════════════════════════════════════════╝\n");
 
