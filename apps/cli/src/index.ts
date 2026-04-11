@@ -450,10 +450,10 @@ async function main() {
         break;
       }
       case "train_file": {
-        // Resolve relative to the repo root (two levels up from apps/cli/src/)
+        // import.meta.dir = apps/cli/src  →  ../../.. = repo root
         const dataPath = path.resolve(
           import.meta.dir,
-          "../../../..",
+          "../../..",
           "examples",
           "data",
           "corpus.txt",
@@ -584,6 +584,9 @@ async function main() {
       case "save_tokenizer": {
         try {
           const location = await askModelLocation("save");
+          // Resolve models/ relative to the repo root so files land at
+          // tokenizer/models/bpe.json rather than inside apps/cli/src/.
+          const repoRoot = path.resolve(import.meta.dir, "../../..");
 
           // Save whichever tokenizer is currently active. The persistence helpers
           // convert our runtime model into a JSON-friendly file format.
@@ -593,7 +596,7 @@ async function main() {
               break;
             }
             saveWordPieceModel(
-              import.meta.dir,
+              repoRoot,
               location,
               wordPieceSlot.model,
               wordPieceSlot.normalizationConfig,
@@ -606,7 +609,7 @@ async function main() {
               break;
             }
             saveBpeModel(
-              import.meta.dir,
+              repoRoot,
               location,
               bpeSlot.mergeTable,
               bpeSlot.normalizationConfig,
@@ -625,7 +628,8 @@ async function main() {
       case "load_tokenizer": {
         try {
           const location = await askModelLocation("load");
-          const parse = readJsonFile(import.meta.dir, location);
+          const repoRoot = path.resolve(import.meta.dir, "../../..");
+          const parse = readJsonFile(repoRoot, location);
           if (parse === null) {
             throw new Error("Failed to load or parse the JSON file.");
           }
