@@ -179,6 +179,23 @@ const handleTrain = async (text: string) => {
   const start = performance.now();
   const originalBytes = Buffer.from(text, "utf-8").length;
 
+  const buildCompressionStats = (finalTokens: number) => {
+    if (originalBytes === 0 || finalTokens === 0) {
+      return {
+        ratio: "0.00",
+        spaceSaved: "0.0",
+      };
+    }
+
+    return {
+      ratio: (originalBytes / finalTokens).toFixed(2),
+      spaceSaved: (
+        ((originalBytes - finalTokens) / originalBytes) *
+        100
+      ).toFixed(1),
+    };
+  };
+
   if (currentTokenizer === "bpe") {
     const { mergeTable, tokens } = train(
       text,
@@ -188,6 +205,7 @@ const handleTrain = async (text: string) => {
     const timeMs = (performance.now() - start).toFixed(2);
     const finalTokens = tokens.length;
     const finalVocabSize = BaseVocabSize + mergeTable.length;
+    const compressionStats = buildCompressionStats(finalTokens);
 
     bpeSlot.mergeTable = mergeTable;
     bpeSlot.trainingStats = {
@@ -197,11 +215,8 @@ const handleTrain = async (text: string) => {
       finalVocabSize,
       originalBytes,
       finalTokens,
-      ratio: (originalBytes / finalTokens).toFixed(2),
-      spaceSaved: (
-        ((originalBytes - finalTokens) / originalBytes) *
-        100
-      ).toFixed(1),
+      ratio: compressionStats.ratio,
+      spaceSaved: compressionStats.spaceSaved,
     };
 
     console.log(
@@ -223,6 +238,7 @@ const handleTrain = async (text: string) => {
   const timeMs = (performance.now() - start).toFixed(2);
   const finalTokens = encoded.length;
   const finalVocabSize = model.idToToken.length;
+  const compressionStats = buildCompressionStats(finalTokens);
 
   wordPieceSlot.model = model;
   wordPieceSlot.trainingStats = {
@@ -232,10 +248,8 @@ const handleTrain = async (text: string) => {
     finalVocabSize,
     originalBytes,
     finalTokens,
-    ratio: (originalBytes / finalTokens).toFixed(2),
-    spaceSaved: (((originalBytes - finalTokens) / originalBytes) * 100).toFixed(
-      1,
-    ),
+    ratio: compressionStats.ratio,
+    spaceSaved: compressionStats.spaceSaved,
   };
 
   console.log(
@@ -668,4 +682,8 @@ async function main() {
 }
 
 // Start the CLI
-main().catch(console.error);
+main().catch((error) => {
+  console.error("Fatal CLI error:", error);
+  rl.close();
+  process.exit(1);
+});
