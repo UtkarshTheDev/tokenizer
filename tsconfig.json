@@ -3,7 +3,19 @@
   "compilerOptions": {
     "paths": {
       "@tokenizer/core": ["./packages/core/src/index.ts"],
-      "@tokenizer/models": ["./packages/models/src/index.ts"],
+      "@tokenizer/models/bpe": ["./packages/models/src/bpe/tokenizer.ts"],
+      "@tokenizer/models/bpe/serializer": [
+        "./packages/models/src/bpe/serializer.ts"
+      ],
+      "@tokenizer/models/wordpiece": [
+        "./packages/models/src/wordpiece/tokenizer.ts"
+      ],
+      "@tokenizer/models/wordpiece/serializer": [
+        "./packages/models/src/wordpiece/serializer.ts"
+      ],
+      "@tokenizer/models/wordpiece/types": [
+        "./packages/models/src/wordpiece/types.ts"
+      ],
       "@tokenizer/evaluation": ["./packages/evaluation/src/index.ts"]
     },
     "strictNullChecks": true
