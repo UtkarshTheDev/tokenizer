@@ -5,7 +5,7 @@ node_modules
 out
 dist
 *.tgz
-models/
+./models
 wordpiece.json
 bpe.json
 

@@ -4,5 +4,16 @@
     "ultracite/biome/core",
     "ultracite/biome/react",
     "ultracite/biome/vitest"
-  ]
+  ],
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noBitwiseOperators": {
+          "options": {
+            "allow": ["&", "|", "^", "~", "<<", ">>", ">>>"]
+          }
+        }
+      }
+    }
+  }
 }
