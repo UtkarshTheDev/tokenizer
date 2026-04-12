@@ -4,11 +4,11 @@ const CONTRACTIONSPATTERN = /'[sSmMdD](?=\s|$)|n't|'re|'ve|'ll|'d/;
 const NUMBERSPATTERN = /\d+\.\d+/;
 const INTEGERSPATTERN = /\d+/;
 const PUNCTUATIONSPATTERN = /[.,;:!?"'()[\]{}]+/;
-const WORDPATTERN = /\w+(?:-\w+;;)*/;
-const WHITESPACEPATTERN = /\s+/;
+const WORDPATTERN = /\w+(?:-\w+)*/;
+const WHITESPACEPATTERN = /[\s\S]/;
 const SINGLECHARPATTERN = /./;
 
-export default function preTokenize(str: string) {
+export default function preTokenize(str: string): number[] {
   const patterns = [
     // 1. URLs
     URLPATTERN,
@@ -31,7 +31,7 @@ export default function preTokenize(str: string) {
   ];
 
   // Combine into one regex
-  const regex = new RegExp(patterns.map((p) => p.source).join("|"), "g");
+  const regex = new RegExp(patterns.map((p) => p.source).join("|"), "gu");
 
   const tokens = str.match(regex)?.filter((t) => t.length > 0) ?? [];
   const bytes: number[] = [];

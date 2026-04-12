@@ -117,7 +117,9 @@ export const encode = (
     if (tokenId === undefined) {
       const unkTokenID = model.tokenToId.get(model.unkToken);
       if (unkTokenID === undefined) {
-        break;
+        throw new Error(
+          "Invalid WordPiece model: unknown token is missing from tokenToId."
+        );
       }
       tokensID.push(unkTokenID);
     } else {
