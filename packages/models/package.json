@@ -1,0 +1,19 @@
+{
+  "name": "@tokenizer/models",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./bpe": "./src/bpe/tokenizer.ts",
+    "./bpe/serializer": "./src/bpe/serializer.ts",
+    "./wordpiece": "./src/wordpiece/tokenizer.ts",
+    "./wordpiece/serializer": "./src/wordpiece/serializer.ts",
+    "./wordpiece/types": "./src/wordpiece/types.ts"
+  },
+  "dependencies": {
+    "@tokenizer/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}

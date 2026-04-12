@@ -1,0 +1,22 @@
+{
+  "name": "tokenizer-cli",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "tokenizer": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@tokenizer/core": "workspace:*",
+    "@tokenizer/models": "workspace:*",
+    "@tokenizer/evaluation": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}

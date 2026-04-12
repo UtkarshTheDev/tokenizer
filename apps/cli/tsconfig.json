@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@tokenizer/core": ["../../packages/core/src/index.ts"],
+      "@tokenizer/models": ["../../packages/models/src/index.ts"],
+      "@tokenizer/evaluation": ["../../packages/evaluation/src/index.ts"]
+    },
+    "strictNullChecks": true
+  }
+}
