@@ -5,12 +5,14 @@ import {
 import {
   BaseVocabSize,
   decode as decodeBPE,
-  decodeWordPiece,
   encode as encodeBPE,
-  encodeWordPiece,
   type MergeTable,
-  type WordPieceModel,
-} from "@tokenizer/models";
+} from "@tokenizer/models/bpe";
+import {
+  decode as decodeWordPiece,
+  encode as encodeWordPiece,
+} from "@tokenizer/models/wordpiece";
+import type { WordPieceModel } from "@tokenizer/models/wordpiece/types";
 import { DEFAULT_TEXT } from "./default-text";
 
 export interface TokenizerStats {

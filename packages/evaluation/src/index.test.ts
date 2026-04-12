@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { DEFAULT_NORMALIZATION_CONFIG } from "@tokenizer/core";
-import { sampleWordPieceModel, train } from "@tokenizer/models";
-import { compareTokenizer } from "./compare";
+import { train } from "@tokenizer/models/bpe";
+import { model as sampleWordPieceModel } from "@tokenizer/models/wordpiece/types";
+import { compareTokenizer } from ".";
 import {
   getBPEMetrics,
   getWordPieceMetrics,

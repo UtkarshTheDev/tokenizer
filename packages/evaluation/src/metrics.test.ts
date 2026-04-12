@@ -3,11 +3,13 @@ import { DEFAULT_NORMALIZATION_CONFIG } from "@tokenizer/core";
 import {
   BaseVocabSize,
   encode as encodeBPE,
-  encodeWordPiece,
-  sampleWordPieceModel,
   train,
+} from "@tokenizer/models/bpe";
+import { encode as encodeWordPiece } from "@tokenizer/models/wordpiece";
+import {
+  model as sampleWordPieceModel,
   type WordPieceModel,
-} from "@tokenizer/models";
+} from "@tokenizer/models/wordpiece/types";
 import { getBPEMetrics, getWordPieceMetrics } from "./metrics";
 
 describe("evaluation metrics", () => {
