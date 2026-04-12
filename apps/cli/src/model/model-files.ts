@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import type {
-  BpeSerializedModel,
-  WordPieceSerializedModel,
-} from "@tokenizer/models";
+import { BaseVocabSize } from "@tokenizer/models/bpe";
+import type { BpeSerializedModel } from "@tokenizer/models/bpe/serializer";
+import type { WordPieceSerializedModel } from "@tokenizer/models/wordpiece/types";
 
 export type TokenizerKind = "bpe" | "wordpiece";
 export type ModelFileAction = "save" | "load";
@@ -132,7 +131,7 @@ export const isBpeSerializedModel = (
         item.length === 2 &&
         item.every((num) => Number.isSafeInteger(num) && num >= 0)
     ) &&
-    value.baseVocabSize === 256 &&
+    value.baseVocabSize === BaseVocabSize &&
     typeof value.version === "number"
   );
 };

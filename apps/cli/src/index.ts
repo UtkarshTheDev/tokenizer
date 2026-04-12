@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { handleCompare, handleStats } from "./handlers/eval";
 import { handleLoad, handleSave } from "./handlers/io";
 import { handleDecode, handleEncode } from "./handlers/processing";

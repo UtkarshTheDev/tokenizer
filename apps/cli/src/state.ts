@@ -4,7 +4,8 @@ import {
   DEFAULT_NORMALIZATION_CONFIG,
   type NormalizationConfig,
 } from "@tokenizer/core";
-import type { MergeTable, WordPieceModel } from "@tokenizer/models";
+import type { MergeTable } from "@tokenizer/models/bpe";
+import type { WordPieceModel } from "@tokenizer/models/wordpiece/types";
 
 // Type definitions moved from index.ts
 export type TokenizerKind = "bpe" | "wordpiece";
@@ -37,13 +38,13 @@ export const rl = readline.createInterface({ input, output });
 
 export const bpeSlot: BpeSlot = {
   mergeTable: null,
-  normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+  normalizationConfig: { ...DEFAULT_NORMALIZATION_CONFIG },
   trainingStats: null,
 };
 
 export const wordPieceSlot: WordPieceSlot = {
   model: null,
-  normalizationConfig: DEFAULT_NORMALIZATION_CONFIG,
+  normalizationConfig: { ...DEFAULT_NORMALIZATION_CONFIG },
   trainingStats: null,
 };
 

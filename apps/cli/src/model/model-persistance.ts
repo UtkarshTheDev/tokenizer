@@ -1,11 +1,14 @@
 import type { NormalizationConfig } from "@tokenizer/core";
-import type { MergeTable, WordPieceModel } from "@tokenizer/models";
+import type { MergeTable } from "@tokenizer/models/bpe";
 import {
   deserializeBpeModel,
-  deserializeWordpieceModel,
   serializeBpeModel,
+} from "@tokenizer/models/bpe/serializer";
+import {
+  deserializeWordpieceModel,
   serializeWordpieceModel,
-} from "@tokenizer/models";
+} from "@tokenizer/models/wordpiece/serializer";
+import type { WordPieceModel } from "@tokenizer/models/wordpiece/types";
 import {
   isBpeSerializedModel,
   isWordPieceSerializedModel,
