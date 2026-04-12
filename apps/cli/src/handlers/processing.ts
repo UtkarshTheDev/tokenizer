@@ -1,13 +1,12 @@
+import { decode, encode, type MergeTable } from "@tokenizer/models/bpe";
 import {
-  decode,
-  decodeWordPiece,
-  encode,
-  encodeWordPiece,
-  type MergeTable,
-  type WordPieceModel,
-} from "@tokenizer/models";
+  decode as decodeWordPiece,
+  encode as encodeWordPiece,
+} from "@tokenizer/models/wordpiece";
+import type { WordPieceModel } from "@tokenizer/models/wordpiece/types";
 import { bpeSlot, currentTokenizer, rl, wordPieceSlot } from "../state";
 
+const WORD_REGEX = /\w+/g;
 export async function handleEncode() {
   if (currentTokenizer === "bpe" && !bpeSlot.mergeTable) {
     console.log("❌ You must train the tokenizer first! (Option 2 or 3)");
@@ -55,10 +54,16 @@ export async function handleDecode() {
   );
   try {
     const cleanStr = tokenStr.replace(/['"[\]]/g, "");
-    const tokens = cleanStr
-      .split(",")
-      .map((s) => Number.parseInt(s.trim(), 10))
-      .filter((n) => !Number.isNaN(n));
+    const parts = cleanStr.split(",").map((s) => s.trim());
+    if (
+      parts.length === 0 ||
+      parts.some((p) => p === "" || !WORD_REGEX.test(p))
+    ) {
+      console.log("❌ Invalid token format.");
+      return;
+    }
+
+    const tokens = parts.map((p) => Number.parseInt(p, 10));
 
     const start = performance.now();
     const text =

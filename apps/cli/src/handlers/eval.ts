@@ -1,13 +1,12 @@
+import type { NormalizationConfig } from "@tokenizer/core";
 import { compareTokenizer } from "@tokenizer/evaluation";
 import { DEFAULT_TEXT } from "@tokenizer/evaluation/default-text";
 import type { TokenizerStats } from "@tokenizer/evaluation/metrics";
-import {
-  bpeSlot,
-  type NormalizationConfig,
-  rl,
-  type TrainingStats,
-  wordPieceSlot,
-} from "../state";
+import { bpeSlot, rl, type TrainingStats, wordPieceSlot } from "../state";
+
+const LABEL_COLUMN_WIDTH = 22;
+const BPE_COLUMN_WIDTH = 14;
+const WORDPIECE_COLUMN_WIDTH = 14;
 
 export function formatNumber(value: number, decimals = 2): string {
   return value.toFixed(decimals);
@@ -19,7 +18,9 @@ function printMetricRow(
   wordPieceValue: string | number
 ) {
   console.log(
-    `  ${label.padEnd(22)} ${String(bpeValue).padStart(14)} ${String(wordPieceValue).padStart(14)}`
+    `  ${label.padEnd(LABEL_COLUMN_WIDTH)} ${String(bpeValue).padStart(
+      BPE_COLUMN_WIDTH
+    )} ${String(wordPieceValue).padStart(WORDPIECE_COLUMN_WIDTH)}`
   );
 }
 
@@ -38,9 +39,15 @@ function printComparisonReport(
 
   console.log("\n── Results ────────────────────────────────────────────");
   console.log(
-    `  ${"Metric".padEnd(22)} ${"BPE".padStart(14)} ${"WordPiece".padStart(14)}`
+    `  ${"Metric".padEnd(LABEL_COLUMN_WIDTH)} ${"BPE".padStart(
+      BPE_COLUMN_WIDTH
+    )} ${"WordPiece".padStart(WORDPIECE_COLUMN_WIDTH)}`
   );
-  console.log(`  ${"-".repeat(22)} ${"-".repeat(14)} ${"-".repeat(14)}`);
+  console.log(
+    `  ${"-".repeat(LABEL_COLUMN_WIDTH)} ${"-".repeat(
+      BPE_COLUMN_WIDTH
+    )} ${"-".repeat(WORDPIECE_COLUMN_WIDTH)}`
+  );
   printMetricRow("Vocab size", bpeStats.vocabSize, wordPieceStats.vocabSize);
   printMetricRow("Token count", bpeStats.tokenCount, wordPieceStats.tokenCount);
   printMetricRow(
@@ -170,30 +177,36 @@ export function handleStats() {
 }
 
 export async function handleCompare() {
-  if (bpeSlot.mergeTable === null || wordPieceSlot.model === null) {
-    console.log(
-      "❌ Train or load both BPE and WordPiece models before comparing."
-    );
-    return;
-  }
-
-  const rawText = await rl.question(
-    "Enter text to compare (press Enter for default evaluation text): "
-  );
-  const text = rawText.length === 0 ? DEFAULT_TEXT : rawText;
-  warnIfNormalizationConfigsDiffer();
-
-  const comparison = compareTokenizer(
-    text,
-    {
-      mergeTable: bpeSlot.mergeTable,
-      normalizationConfig: bpeSlot.normalizationConfig,
-    },
-    {
-      model: wordPieceSlot.model,
-      normalizationConfig: wordPieceSlot.normalizationConfig,
+  try {
+    if (bpeSlot.mergeTable === null || wordPieceSlot.model === null) {
+      console.log(
+        "❌ Train or load both BPE and WordPiece models before comparing."
+      );
+      return;
     }
-  );
 
-  printComparisonReport(text, comparison.bpe, comparison.wordpiece);
+    const rawText = await rl.question(
+      "Enter text to compare (press Enter for default evaluation text): "
+    );
+    const text = rawText.length === 0 ? DEFAULT_TEXT : rawText;
+    warnIfNormalizationConfigsDiffer();
+
+    const comparison = compareTokenizer(
+      text,
+      {
+        mergeTable: bpeSlot.mergeTable,
+        normalizationConfig: bpeSlot.normalizationConfig,
+      },
+      {
+        model: wordPieceSlot.model,
+        normalizationConfig: wordPieceSlot.normalizationConfig,
+      }
+    );
+
+    printComparisonReport(text, comparison.bpe, comparison.wordpiece);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to compare Tokenizers";
+    console.log(`❌ ${message}`);
+  }
 }

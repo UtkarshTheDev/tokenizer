@@ -1,16 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
+import { BaseVocabSize, train } from "@tokenizer/models/bpe";
 import {
-  BaseVocabSize,
-  encodeWordPiece,
-  train,
-  trainWordPiece,
-} from "@tokenizer/models";
+  encode as encodeWordPiece,
+  train as trainWordPiece,
+} from "@tokenizer/models/wordpiece";
 import { bpeSlot, currentTokenizer, rl, wordPieceSlot } from "../state";
 
 export async function handleTrain(text: string) {
   const defaultVocabSize = currentTokenizer === "bpe" ? 320 : 64;
-  const minVocabSize = currentTokenizer === "bpe" ? 257 : 1;
+  const minVocabSize = currentTokenizer === "bpe" ? BaseVocabSize + 1 : 1;
   const vocabStr = await rl.question(
     `Target vocabulary size (default ${defaultVocabSize}, min ${minVocabSize}): `
   );
@@ -118,13 +117,21 @@ export async function handleTrainText() {
 }
 
 export async function handleTrainFile() {
-  const repoRoot = path.resolve(import.meta.dir, "../../../..");
-  const dataPath = path.resolve(repoRoot, "examples", "data", "corpus.txt");
+  try {
+    const repoRoot = path.resolve(import.meta.dir, "../../../..");
+    const dataPath = path.resolve(repoRoot, "examples", "data", "corpus.txt");
 
-  if (!fs.existsSync(dataPath)) {
-    console.log(`❌ Could not find file: ${dataPath}`);
-    return;
+    if (!fs.existsSync(dataPath)) {
+      console.log(`❌ Could not find file: ${dataPath}`);
+      return;
+    }
+    const text = fs.readFileSync(dataPath, "utf-8");
+    await handleTrain(text);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to Parse data from corpus";
+    console.error("❌ Failed to train from file:", message);
   }
-  const text = fs.readFileSync(dataPath, "utf-8");
-  await handleTrain(text);
 }
